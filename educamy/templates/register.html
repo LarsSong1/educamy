@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load tailwind_filters %}
+
+{% block content %}
+  <section class="flex">
+    <!-- Left Pane -->
+    <div class="hidden lg:flex items-center justify-center flex-grow bg-white text-black overflow-hidden h-screen">
+      <img class="object-cover w-[100%] h-[100%]" src="{% static '' %}" alt="imagen-registro" />
+    </div>
+
+    <!-- Right Pane -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center relative overflow-hidden">
+      {% comment %} <div class="absolute top-[-4rem] z-2 container-doodle">
+        <img class="w-60 h-60 lg:w-80 lg:h-80 doodle" src="{% static 'img/doodle2.png' %}" alt="" />
+      </div> {% endcomment %}
+
+      <div class="max-w-md w-full p-6 z-20 mt-[5rem] lg:mt-0">
+        
+        <h2 class="mb-5 text-center text-gray-900 font-mono font-bold text-4xl">Registrate</h2>
+        <p class="mb-2 text-gray-900 text-center">Sistema de Gestión de residuos domesticos</p>
+
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{formulario | crispy }}
+
+          
+
+          <div>
+            <button type="submit" class="w-full bg-white border-2 border-black text-black p-2 rounded-md hover:text-white hover:bg-black transition-colors duration-300">Crear cuenta</button>
+          </div>
+        </form>
+
+        <div class="mt-4 text-sm text-gray-600 text-center">
+          <p>
+            Ya Tienes una cuenta?<a href="{% url 'educamy:login' %}" class="text-black hover:underline">Ingresa Aqui</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
