@@ -4,6 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
 from .models import Profile
 from django.contrib.auth.forms import UserChangeForm
+from .models import Materia
 
 
 
@@ -62,3 +63,47 @@ class UpdateProfile(UserChangeForm):
             user.save()
 
         return user
+    
+
+
+
+
+
+
+from .models import Materia  # Ya lo tienes arriba, perfecto
+
+DIAS_CHOICES = [
+    ('lunes', 'Lunes'),
+    ('martes', 'Martes'),
+    ('miércoles', 'Miércoles'),
+    ('jueves', 'Jueves'),
+    ('viernes', 'Viernes')
+]
+
+NIVELES = [
+    ('Primero', 'Primero'),
+    ('Segundo', 'Segundo'),
+    ('Tercero', 'Tercero'),
+    ('Cuarto', 'Cuarto'),
+    ('Quinto', 'Quinto'),
+    ('Sexto', 'Sexto'),
+    ('Septimo', 'Septimo'),
+]
+
+class PlanAnualForm(forms.Form):
+    fecha_inicio = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label="Fecha de inicio")
+    fecha_fin = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label="Fecha de fin")
+    dias_clase = forms.MultipleChoiceField(
+        choices=DIAS_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        label="Días de clases (elige varios)"
+    )
+    numero_unidades = forms.IntegerField(min_value=1, label="Número de unidades")
+    nivel = forms.ChoiceField(
+        choices=NIVELES,
+        label="Nivel"
+    )
+    materia = forms.ModelChoiceField(
+        queryset=Materia.objects.all(),
+        label="Materia"
+    )

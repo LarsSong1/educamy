@@ -3,12 +3,8 @@
 {% load tailwind_filters %}
 
 {% block content %}
-  <section class="flex">
+  <section class="flex justify-center items-center h-screen">
     <!-- Left Pane -->
-    <div class="hidden lg:flex items-center justify-center flex-grow bg-white text-black overflow-hidden h-screen">
-      <img class="object-cover w-[100%] h-[100%]" src="{% static '' %}" alt="imagen-registro" />
-    </div>
-
     <!-- Right Pane -->
     <div class="w-full lg:w-1/2 flex items-center justify-center relative overflow-hidden">
       {% comment %} <div class="absolute top-[-4rem] z-2 container-doodle">

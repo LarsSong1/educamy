@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10 p-8 bg-white shadow-md rounded-lg">
+    <h2 class="text-2xl font-bold mb-6">Generar contenido para clases</h2>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Generar Contenido
+        </button>
+    </form>
+</div>
+{% endblock %}
