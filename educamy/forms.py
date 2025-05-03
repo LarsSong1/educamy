@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
 from .models import Profile
 from django.contrib.auth.forms import UserChangeForm
-from .models import Materia
+from .models import SchoolSubject
 
 
 
@@ -14,6 +14,17 @@ class CreateUser(UserCreationForm):
         self.fields['username'].label = 'Nombre de usuario'
         self.fields['password1'].label = 'Contraseña'
         self.fields['password2'].label = 'Confirmar contraseña'
+
+        self.fields['username'].widget.attrs.update({
+    'class': 'w-full p-2 border-2 border-black rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500'
+})
+        self.fields['password1'].widget.attrs.update({
+    'class': 'w-full p-2 border-2 border-black rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500'
+})
+        
+        self.fields['password2'].widget.attrs.update({
+    'class': 'w-full p-2 border-2 border-black rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500'
+})
 
     class Meta:
         model = User
@@ -70,9 +81,9 @@ class UpdateProfile(UserChangeForm):
 
 
 
-from .models import Materia  # Ya lo tienes arriba, perfecto
+from .models import SchoolSubject  # Ya lo tienes arriba, perfecto
 
-DIAS_CHOICES = [
+DAYS_CHOICES = [
     ('lunes', 'Lunes'),
     ('martes', 'Martes'),
     ('miércoles', 'Miércoles'),
@@ -80,7 +91,7 @@ DIAS_CHOICES = [
     ('viernes', 'Viernes')
 ]
 
-NIVELES = [
+LEVELS = [
     ('Primero', 'Primero'),
     ('Segundo', 'Segundo'),
     ('Tercero', 'Tercero'),
@@ -90,20 +101,20 @@ NIVELES = [
     ('Septimo', 'Septimo'),
 ]
 
-class PlanAnualForm(forms.Form):
-    fecha_inicio = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label="Fecha de inicio")
-    fecha_fin = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label="Fecha de fin")
-    dias_clase = forms.MultipleChoiceField(
-        choices=DIAS_CHOICES,
+class AnnualPlanForm(forms.Form):
+    start_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label="Fecha de inicio")
+    end_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label="Fecha de fin")
+    days_class = forms.MultipleChoiceField(
+        choices=DAYS_CHOICES,
         widget=forms.CheckboxSelectMultiple,
         label="Días de clases (elige varios)"
     )
-    numero_unidades = forms.IntegerField(min_value=1, label="Número de unidades")
-    nivel = forms.ChoiceField(
-        choices=NIVELES,
+    units_number = forms.IntegerField(min_value=1, label="Número de unidades")
+    level = forms.ChoiceField(
+        choices=LEVELS,
         label="Nivel"
     )
-    materia = forms.ModelChoiceField(
-        queryset=Materia.objects.all(),
+    school_subject = forms.ModelChoiceField(
+        queryset=SchoolSubject.objects.all(),
         label="Materia"
     )

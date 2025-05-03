@@ -12,26 +12,27 @@ class Profile(models.Model):
     
 
 
-class Materia(models.Model):
-    nombre = models.CharField(max_length=100)
+class SchoolSubject(models.Model):
+    name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return self.nombre
+        return self.name
 
-class ContenidoGenerado(models.Model):
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
-    materia = models.ForeignKey(Materia, on_delete=models.CASCADE)
-    fecha_inicio = models.DateField()
-    fecha_fin = models.DateField()
-    grados = models.CharField(max_length=200)  # Ej: "Primero, Segundo, Tercero"
-    tema = models.CharField(max_length=255, blank=True, null=True)
-    archivo_pdf = models.FileField(upload_to='contenidos_pdf/', null=True, blank=True)
-    contenido_generado = models.TextField()
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
+class GeneratedContent(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    school_subject = models.ForeignKey(SchoolSubject, on_delete=models.CASCADE)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    grade = models.CharField(max_length=200)  # Ej: "Primero, Segundo, Tercero"
+    topic = models.CharField(max_length=255, blank=True, null=True)
+    pdf_file = models.FileField(upload_to='contenidos_pdf/', null=True, blank=True)
+    generated_content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Contenido de {self.usuario.username} - {self.materia.nombre}"
+        return f"Contenido de {self.user.username} - {self.school_subject.name}"
 
 
 

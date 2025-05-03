@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import Materia, ContenidoGenerado
+from .models import SchoolSubject, GeneratedContent
 
 # Register your models here.
-admin.site.register(Materia)
-admin.site.register(ContenidoGenerado)
+admin.site.register(SchoolSubject)
+admin.site.register(GeneratedContent)

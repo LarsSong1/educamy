@@ -8,27 +8,30 @@
 
 
 {% block content %}
-  <section class="w-full mx-auto grid grid-cols-1 h-screen overflow-hidden relative bg-gradient-to-tr from-green-50 via-green-100 to-green-700 ">
+  <section class="w-full mx-auto grid grid-cols-1 h-screen overflow-hidden relative bg-gradient-to-br from-purple-50 via-purple-100 to-purple-700 ">
     <div class="flex flex-col items-center justify-center z-10">
 
-        <img class="relative w-full h-10" src="{% static '' %}" alt="logo">
+        <img class="relative w-full h-10 mb-10" src="{% static 'educamy.svg' %}" alt="logo">
    
-      <h2 class="mb-5 text-black font-mono font-bold text-4xl">Inicia Sesión</h2>
-      <span class="mb-2 text-black text-center">Sistema de Gestión de <hr />Domesticos</span>
+      <h2 class="mb-5 text-black font-bold text-2xl tracking-tighter">Inicia Sesión</h2>
+      <p class="text-black text-sm text-center">
+        Sistema de generación de Itinerarios para 
+        <hr/>
+        <span class="font-bold">
+          Docentes
+        </span>
+      
+      </p>
 
-      <form class="min-w-[280px] lg:min-w-[400px] z-20 text-white" method="post" enctype="multipart/form-data">
+      <form class="min-w-[280px] mt-4 lg:min-w-[400px] z-20 " method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form|crispy }}
-        <button class="bg-white border-4 border-black text-black hover:bg-black hover:text-white text-base rounded-lg py-2.5 px-5 transition-colors w-full text-[19px]">Entrar</button>
+        {{ form |crispy }}
+        <button class="bg-purple-700 mt-4 border-2 border-purple-700 text-white hover:bg-purple-900 hover:text-white text-base hover:border-purple-900 rounded-lg py-2.5 px-5 transition-colors w-full text-md">Entrar</button>
       </form>
       <div class="z-20">
         <p class="text-center mt-3 text-[14px]">
           No tienes una cuenta aun?
-          <a href="{% url 'educamy:register' %}" class="text-gray-500">Crea una Ahora!</a>
-        </p>
-        <p class="text-center mt-3 p-2 text-[14px]">
-          Esta es una aplicación desarrollado por
-          <a href="#" class="text-gray-500">Dave y Carolina</a>
+          <a href="{% url 'educamy:register' %}" class="text-purple-700 hover:underline">Crea una Ahora!</a>
         </p>
       </div>
     </div>
