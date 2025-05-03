@@ -29,7 +29,10 @@ genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 
 class DashboardView(View):
     def get(self, request, *args, **kwargs):
-        return render(request, 'dashboard.html')
+        context = {
+            'user': request.user,
+        }
+        return render(request, 'dashboard.html', context)
 
 
 
