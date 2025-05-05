@@ -67,7 +67,7 @@
         <!-- Main Navigation -->
         <div class="w-full grow space-y-3 p-4">
           <a
-            href="#"
+            href="{% url 'educamy:dashboard' %}"
             class="flex items-center gap-3 rounded-lg bg-white px-4 py-2.5 font-semibold text-purple-900 shadow-xs shadow-slate-300/50"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard-icon lucide-layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
@@ -76,7 +76,7 @@
 
 
           <a
-            href="#"
+            href="{% url 'educamy:itineraries' %}"
             class="flex items-center gap-3 rounded-lg px-4 py-2.5 font-semibold text-purple-900 hover:bg-white hover:shadow-xs hover:shadow-slate-300/50 active:bg-white/75 active:text-slate-800 active:shadow-slate-300/10"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook-text-icon lucide-notebook-text"><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9.5 8h5"/><path d="M9.5 12H16"/><path d="M9.5 16H14"/></svg>
@@ -94,13 +94,13 @@
           </a>
 
 
-          <a
+          {% comment %} <a
             href="#"
             class="flex items-center gap-3 rounded-lg px-4 py-2.5 font-semibold text-purple-900 hover:bg-white hover:shadow-xs hover:shadow-slate-300/50 active:bg-white/75 active:text-slate-800 active:shadow-slate-300/10"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users-round-icon lucide-users-round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg>
             <span>Estudiantes</span>
-          </a>
+          </a> {% endcomment %}
         </div>
         <!-- END Main Navigation -->
   

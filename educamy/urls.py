@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import loginView, registerView, DashboardView, generar_contenido, logoutApp
+from .views import loginView, registerView, DashboardView, generar_contenido, logoutApp, ItinerariesView
 
 app_name = 'educamy'
 
@@ -9,5 +9,7 @@ urlpatterns = [
     path('logout/', logoutApp, name='logout'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
     path('generate_content/', generar_contenido, name='generate_content'),
+    path('itineraries/', ItinerariesView.as_view(), name='itineraries'),
+
 
 ]

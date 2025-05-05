@@ -27,12 +27,6 @@ genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 
 
 
-class DashboardView(View):
-    def get(self, request, *args, **kwargs):
-        context = {
-            'user': request.user,
-        }
-        return render(request, 'dashboard.html', context)
 
 
 
@@ -78,6 +72,34 @@ def loginView(request):
 def logoutApp(request):
     logout(request)
     return redirect('educamy:login')
+
+
+
+class DashboardView(View):
+    def get(self, request, *args, **kwargs):
+        context = {
+            'user': request.user,
+        }
+        return render(request, 'dashboard.html', context)
+    
+
+
+class ItinerariesView(View):
+    def get(self, request, *args, **kwargs):
+        context = {
+            'user': request.user,
+        }
+        return render(request, 'itineraries.html', context)
+
+
+class SchoolSubjectsView(View):
+    def get(self, request, *args, **kwargs):
+        context = {
+            'user': request.user,
+        }
+        return render(request, 'schoolSubjects.html', context)
+
+
 
 
 
