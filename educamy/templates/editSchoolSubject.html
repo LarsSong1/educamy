@@ -1,0 +1,34 @@
+{% extends 'layout.html' %}
+{% load tailwind_filters %}
+
+
+
+{% block dashboardContent %}
+    <section>
+        <h1 class="text-3xl font-bold">Materia</h1>
+        <h4 clasS="text-sm opacity-75">Edita el contenido</h4>
+        
+
+        <div id="createSubjectDiv" class="mt-4">
+            <h2 class="font-bold">Editar Materia</h2>
+            <h5 class="opacity-75 text-sm">Edita la materia que registraste</h5>
+
+            <div class="mt-4">
+                <form method="POST" class="w-full">
+                    {% csrf_token %}
+                    {{ form | crispy}}
+                    <div class="w-full flex justify-end mt-4">
+                        <button class="bg-purple-700 text-white py-1 px-4 rounded-md" type="submit">Crear</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+   
+
+{% endblock dashboardContent %}
+
+
+    
+

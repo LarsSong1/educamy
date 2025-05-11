@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+import datetime
+from django.utils import timezone
 
 # Create your models here.
 
@@ -15,6 +17,9 @@ class Profile(models.Model):
 class SchoolSubject(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='school_subjects')
 
     def __str__(self):
         return self.name
@@ -33,6 +38,9 @@ class GeneratedContent(models.Model):
 
     def __str__(self):
         return f"Contenido de {self.user.username} - {self.school_subject.name}"
+
+
+
 
 
 

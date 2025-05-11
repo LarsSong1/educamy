@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import Profile
 from django.contrib.auth.forms import UserChangeForm
 from .models import SchoolSubject
+  # Ya lo tienes arriba, perfecto
 
 
 
@@ -81,7 +82,6 @@ class UpdateProfile(UserChangeForm):
 
 
 
-from .models import SchoolSubject  # Ya lo tienes arriba, perfecto
 
 DAYS_CHOICES = [
     ('lunes', 'Lunes'),
@@ -118,3 +118,20 @@ class AnnualPlanForm(forms.Form):
         queryset=SchoolSubject.objects.all(),
         label="Materia"
     )
+
+
+
+
+class AddSchoolSubjectForm(forms.ModelForm):
+    class Meta:
+        model = SchoolSubject
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+        labels = {
+            'name': _('Nombre de la materia'),
+            'description': _('Descripción de la materia'),
+        }
+        

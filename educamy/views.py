@@ -5,18 +5,17 @@ from django.contrib import messages
 from django.utils.translation import activate
 from .forms import CreateUser
 from django.views.generic import View
-
 from dotenv import load_dotenv
 import os
 import tempfile
 from weasyprint import HTML
-from .models import GeneratedContent
 import google.generativeai as genai
 from bs4 import BeautifulSoup
-import time
 from datetime import timedelta
 from django.contrib.auth.decorators import login_required
-from .forms import AnnualPlanForm
+from .models import GeneratedContent, SchoolSubject
+from .forms import AnnualPlanForm, AddSchoolSubjectForm
+from django.shortcuts import get_object_or_404
 
 # Cargar variables de entorno
 load_dotenv()
@@ -68,7 +67,6 @@ def loginView(request):
     return render(request, 'login.html', {"form": form})
 
 
-
 def logoutApp(request):
     logout(request)
     return redirect('educamy:login')
@@ -86,20 +84,63 @@ class DashboardView(View):
 
 class ItinerariesView(View):
     def get(self, request, *args, **kwargs):
+     
         context = {
             'user': request.user,
+                  
         }
         return render(request, 'itineraries.html', context)
 
 
 class SchoolSubjectsView(View):
     def get(self, request, *args, **kwargs):
+        form = AddSchoolSubjectForm()
+        schoolSubjects = SchoolSubject.objects.filter(user=request.user)
         context = {
             'user': request.user,
+            'form': form,   
+            'schoolSubjects': schoolSubjects,
         }
-        return render(request, 'schoolSubjects.html', context)
+        return render(request, 'schoolSubject.html', context)
+    
+    def post(self, request, *args, **kwargs):
+        form = AddSchoolSubjectForm(request.POST)
+        if form.is_valid():
+            school_subject = form.save(commit=False)
+            school_subject.user = request.user
+            school_subject.save()
+            return redirect('educamy:school_subjects')
+        else:
+            schoolSubjects = SchoolSubject.objects.filter(user=request.user)
+            context = {
+                'user': request.user,
+                'form': form,
+                'schoolSubjects': schoolSubjects,
+            }
+            return render(request, 'schoolSubject.html', context)
+    
 
 
+class SchoolSubjectEditView(View):
+    def get(self, request, pk):
+        subject = get_object_or_404(SchoolSubject, pk=pk, user=request.user)
+        form = AddSchoolSubjectForm(instance=subject)
+        return render(request, 'editSchoolSubject.html', {'form': form, 'subject': subject})
+
+    def post(self, request, pk):
+        subject = get_object_or_404(SchoolSubject, pk=pk, user=request.user)
+        form = AddSchoolSubjectForm(request.POST, instance=subject)
+        if form.is_valid():
+            form.save()
+            return redirect('educamy:school_subjects')
+        return render(request, 'editSchoolSubject.html', {'form': form, 'subject': subject})
+
+
+class SchoolSubjectDeleteView(View):
+    def post(self, request, pk):
+        subject = get_object_or_404(SchoolSubject, pk=pk, user=request.user)
+        subject.delete()
+        return redirect('educamy:school_subjects')
 
 
 
@@ -195,10 +236,10 @@ def formatTextToHtml(text):
 
     return html_result
 
-models = genai.list_models()
+# models = genai.list_models()
 
-for model in models:
-    print(model.name)
+# for model in models:
+#     print(model.name)
 
 def generar_contenido(request):
     if request.method == 'POST':
@@ -322,5 +363,7 @@ NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en
         form = AnnualPlanForm()
 
     return render(request, 'generateContent.html', {'form': form})
+
+
 
 
