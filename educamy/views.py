@@ -16,11 +16,13 @@ from django.contrib.auth.decorators import login_required
 from .models import GeneratedContent, SchoolSubject
 from .forms import AnnualPlanForm, AddSchoolSubjectForm
 from django.shortcuts import get_object_or_404
-
+from math import ceil
 # Cargar variables de entorno
 load_dotenv()
 # Configurar la API de Gemini
-genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+# genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+genai.configure(api_key='AIzaSyDf0rm3_GvwCFX_Ae7pzIBNkALXWjhJmjk')
+print("API Key configurada correctamente. ", os.getenv('GEMINI_API_KEY'))
 
 
 
@@ -167,18 +169,84 @@ def extractTopicsTable(html_string):
 
 
 
+def parse_gemini_response_to_units(text):
+    unidades = []
+    bloque = {}
+    current_key = None
 
-def splitDatesInUnits(start_date, end_date, units_number, class_days):
-    from math import ceil
-    valid_days = {
-        'lunes': 0,
-        'martes': 1,
-        'miércoles': 2,
-        'jueves': 3,
-        'viernes': 4
-    }
-    index_days = [valid_days[d] for d in class_days]
+    for line in text.splitlines():
+        line = line.strip()
 
+        if line.startswith("Unidad"):
+            if bloque:
+                unidades.append(bloque)
+            bloque = {'titulo': line, 'objetivos': [], 'contenidos': [], 'metodologias': [], 'criterios': [], 'indicadores': []}
+            current_key = None
+        elif line.startswith("Título:"):
+            bloque['titulo'] = line.replace("Título:", "").strip()
+        elif "Objetivos específicos:" in line:
+            current_key = 'objetivos'
+        elif "Contenidos:" in line:
+            current_key = 'contenidos'
+        elif "Orientaciones metodológicas:" in line:
+            current_key = 'metodologias'
+        elif "Criterios de evaluación:" in line:
+            current_key = 'criterios'
+        elif "Indicadores de evaluación:" in line:
+            current_key = 'indicadores'
+        elif line.startswith("- ") and current_key:
+            bloque[current_key].append(line[2:])
+        elif not line:
+            current_key = None
+
+    if bloque:
+        unidades.append(bloque)
+
+    return unidades
+
+
+def format_units_to_boxes(text):
+    unidades = parse_gemini_response_to_units(text)
+    html = ""
+
+    for index, unidad in enumerate(unidades, start=1):
+        html += f"""
+        <table style="width: 100%; border: 2px solid #4a148c; border-collapse: collapse; margin-bottom: 30px; font-family: Arial, sans-serif; font-size: 14px;">
+            <tr>
+                <th colspan="2" style="background-color: #f3e8ff; color: #4a148c; padding: 10px; font-size: 16px; text-align: left;">
+                    Unidad {index}: {unidad['titulo']}
+                </th>
+            </tr>
+        """
+
+        def fila(titulo, items):
+            if not items:
+                return ""
+            return f"""
+            <tr>
+                <td style="width: 30%; font-weight: bold; vertical-align: top; padding: 8px; background-color: #f9f9f9;">{titulo}</td>
+                <td style="padding: 8px;">
+                    <ul style="margin: 0; padding-left: 20px;">
+                        {''.join(f'<li>{item}</li>' for item in items)}
+                    </ul>
+                </td>
+            </tr>
+            """
+
+        html += fila("Objetivos específicos", unidad['objetivos'])
+        html += fila("Contenidos", unidad['contenidos'])
+        html += fila("Orientaciones metodológicas", unidad['metodologias'])
+        html += fila("Criterios de evaluación", unidad['criterios'])
+        html += fila("Indicadores de evaluación", unidad['indicadores'])
+
+        html += "</table>"
+
+    return html
+
+
+
+def splitDatesInUnits(start_date, end_date, units_number):
+    index_days = [0, 1, 2, 3, 4]  # lunes a viernes
     available_days = []
     current_date = start_date
     while current_date <= end_date:
@@ -189,17 +257,14 @@ def splitDatesInUnits(start_date, end_date, units_number, class_days):
     total_days = len(available_days)
 
     if units_number > total_days:
-        units_number = total_days  # 🔥 No puedes tener más unidades que días
+        units_number = total_days
 
     units = []
     hop = ceil(total_days / units_number)
-
     for i in range(0, total_days, hop):
         units.append(available_days[i:i+hop])
 
-    # 🔥 Si sobran bloques extra, los ajustamos al final
     if len(units) > units_number:
-        # Fusionar el último bloque extra en el anterior
         units[-2].extend(units[-1])
         units = units[:-1]
 
@@ -240,21 +305,25 @@ def formatTextToHtml(text):
 
 # for model in models:
 #     print(model.name)
+modelName = 'gemini-1.5-flash-002'
+
+
 
 def generar_contenido(request):
+    print("API Key configurada correctamente. ", os.getenv('GEMINI_API_KEY'))
     if request.method == 'POST':
         form = AnnualPlanForm(request.POST)
         if form.is_valid():
             start_date = form.cleaned_data['start_date']
             end_date = form.cleaned_data['end_date']
-            days_class = form.cleaned_data['days_class']
+            # days_class = form.cleaned_data['days_class']
             units_number = form.cleaned_data['units_number']
             level = form.cleaned_data['level']
             school_subject = form.cleaned_data['school_subject']
 
-            units = splitDatesInUnits(start_date, end_date, units_number, days_class)
+            units = splitDatesInUnits(start_date, end_date, units_number)
             # Inicializar Gemini
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel(modelName)
             chat = model.start_chat(history=[])
 
             # Generar un solo PROMPT grande
@@ -272,7 +341,7 @@ Para cada unidad proporciona:
 
 Formato de salida para cada unidad:
 
-Unidad {{}}
+Unidad {units_number}:
 Título: {{Título sugerido}}
 
 Objetivos específicos:
@@ -325,15 +394,15 @@ NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en
   <h1>Plan Anual de Clase</h1>
   <p><strong>Fecha Inicio:</strong> {start_date}</p>
   <p><strong>Fecha Fin:</strong> {end_date}</p>
-  <p><strong>Días de clase:</strong> {', '.join(days_class)}</p>
+  
   <p><strong>Nivel:</strong> {level}</p>
   <p><strong>Materia:</strong> {school_subject.name}</p>
   <p><strong>Número de unidades:</strong> {units_number}</p>
 
-  <div class="unidad">
+ <div class="unidad">
     <h2>Planificación de Unidades</h2>
-    <pre>{generated_schema}</pre>
-  </div>
+    {format_units_to_boxes(generated_schema)}
+</div>
 
 </body>
 </html>
