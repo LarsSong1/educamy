@@ -2,7 +2,12 @@
 
 {% block dashboardContent %}
   <div>
-    <h2 class="text-3xl font-bold">Bienvenido {{ user }}!</h2>
+    <h2 class="text-3xl font-bold">Bienvenido
+        <span class="text-purple-900">
+            {{ user }}
+        </span>    
+        !
+    </h2>
     <h6 class="text-sm opacity-75">Crea y gestiona tus itinerarios de clase con ayuda de IA</h6>
   </div>
 
@@ -31,7 +36,7 @@
         <p class="text-xs opacity-75">Description</p>
     </div>
     {% comment %} Estudiantes {% endcomment %}
-    <div class="border-1 border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
+    {% comment %} <div class="border-1 border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
         <div class="flex justify-between w-full">
             <h3 class="text-sm font-semibold">Estudiantes</h3>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users-round-icon lucide-users-round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg>
@@ -40,7 +45,7 @@
             8
         </h4>
         <p class="text-xs opacity-75">Description</p>
-    </div>
+    </div> {% endcomment %}
   </section>
 
 

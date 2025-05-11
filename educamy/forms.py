@@ -101,6 +101,9 @@ LEVELS = [
     ('Septimo', 'Septimo'),
 ]
 
+BASE_INPUT_CLASS = 'appearance-none w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 transition'
+
+
 class AnnualPlanForm(forms.Form):
     start_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label="Fecha de inicio")
     end_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label="Fecha de fin")
@@ -112,11 +115,14 @@ class AnnualPlanForm(forms.Form):
     units_number = forms.IntegerField(min_value=1, label="Número de unidades")
     level = forms.ChoiceField(
         choices=LEVELS,
-        label="Nivel"
+        label="Nivel",
+        widget=forms.Select(attrs={'class': 'absolute'}),
     )
     school_subject = forms.ModelChoiceField(
         queryset=SchoolSubject.objects.all(),
-        label="Materia"
+        label="Materia",
+        widget=forms.Select(attrs={'class': 'absolute'}),
+        
     )
 
 

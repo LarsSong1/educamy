@@ -1,15 +1,70 @@
-{% extends 'base.html' %}
+{% extends 'layout.html' %}
 {% load static %}
-{% block content %}
 {% load tailwind_filters %}
-<div class="max-w-4xl mx-auto mt-10 p-8 bg-white shadow-md rounded-lg">
-    <h2 class="text-2xl font-bold mb-6">Generar contenido para clases</h2>
-    <form method="POST">
-        {% csrf_token %}
-        {{ form | crispy }}
-        <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-            Generar Contenido
-        </button>
+
+{% block dashboardContent %}
+  <div class="max-w-6xl mx-auto p-8 bg-white shadow-md rounded-lg">
+    {% include "components/btnBack.html" %}
+    <div class="mb-4">
+      <h2 class="text-3xl font-bold">Genera Itinerario</h2>
+      <p class="text-sm opacity-75">Proporciona todos los datos necesarios para poder generar tu itinerario</p>
+    </div>
+    <form class="grid lg:grid-cols-2 grid-cols-1 gap-4" method="POST">
+      {% csrf_token %}
+      {{ form|crispy }}
+      <div id="bt-generate" class="flex justify-end col-span-2">
+        <button type="submit" class="mt-4 bg-purple-700 hover:bg-purple-900 text-white font-bold py-2 px-4 rounded">Generar Contenido</button>
+      </div>
+     
+
+      <div class="flex justify-end col-span-2">
+        <div class="loader hidden"></div>
+      </div>
     </form>
-</div>
+  </div>
+
+  <script>
+  const form = document.querySelector('form')
+  const btn = form.querySelector('button[type="submit"]')
+  const loader = document.querySelector('.loader')
+
+  form.addEventListener('submit', (event) => {
+    if (!form.checkValidity()) {
+      // ❌ Hay errores en el formulario, no hacemos nada
+      return
+    }
+
+    // ✅ El formulario pasa validación HTML5
+    btn.classList.add('hidden')
+    loader.classList.remove('hidden')
+  })
+</script>
+
+  <style>
+    /* From Uiverse.io by doniaskima */
+    .loader {
+      width: fit-content;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 20px;
+      background: radial-gradient(circle closest-side, #000 94%, #0000) right/calc(200% - 1em) 100%;
+      animation: l24 1s infinite alternate linear;
+    }
+    
+    .loader::before {
+      content: 'Generando...';
+      line-height: 1em;
+      color: #0000;
+      background: inherit;
+      background-image: radial-gradient(circle closest-side, #fff 94%, #000);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    
+    @keyframes l24 {
+      100% {
+        background-position: left;
+      }
+    }
+  </style>
 {% endblock %}
