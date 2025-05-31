@@ -68,7 +68,7 @@
         <div class="w-full grow space-y-3 p-4">
           <a
             href="{% url 'educamy:dashboard' %}"
-            class="flex items-center gap-3 rounded-lg bg-white px-4 py-2.5 font-semibold text-purple-900 shadow-xs shadow-slate-300/50"
+            class="flex items-center gap-3 rounded-lg bg-white px-4 py-2.5 font-semibold text-black shadow-xs shadow-slate-300/50"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard-icon lucide-layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
             <span>Dashboard</span>
@@ -77,21 +77,23 @@
 
           <a
             href="{% url 'educamy:itineraries' %}"
-            class="flex items-center gap-3 rounded-lg px-4 py-2.5 font-semibold text-purple-900 hover:bg-white hover:shadow-xs hover:shadow-slate-300/50 active:bg-white/75 active:text-slate-800 active:shadow-slate-300/10"
+            class="flex items-center gap-3 rounded-lg px-4 py-2.5 font-semibold text-black hover:bg-white hover:shadow-xs hover:shadow-slate-300/50 active:bg-white/75 active:text-slate-800 active:shadow-slate-300/10"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook-text-icon lucide-notebook-text"><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9.5 8h5"/><path d="M9.5 12H16"/><path d="M9.5 16H14"/></svg>
             <span>Itinerarios</span>
           </a>
 
 
-
+          {% if request.user.is_superuser %}
+          
           <a
-            href="{% url 'educamy:school_subjects' %}"
-            class="flex items-center gap-3 rounded-lg px-4 py-2.5 font-semibold text-purple-900 hover:bg-white hover:shadow-xs hover:shadow-slate-300/50 active:bg-white/75 active:text-slate-800 active:shadow-slate-300/10"
+          href="{% url 'educamy:school_subjects' %}"
+          class="flex items-center gap-3 rounded-lg px-4 py-2.5 font-semibold text-black hover:bg-white hover:shadow-xs hover:shadow-slate-300/50 active:bg-white/75 active:text-slate-800 active:shadow-slate-300/10"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-icon lucide-book"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg>
-            <span>Materias</span>
-          </a>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-icon lucide-book"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg>
+          <span>Materias</span>
+        </a>
+          {% endif %}
 
 
           {% comment %} <a
@@ -124,7 +126,7 @@
           </a> {% endcomment %}
           <a
             href="{% url 'educamy:logout' %}"
-            class="flex items-center gap-3 rounded-lg px-4 py-2.5 font-semibold text-purple-900 hover:bg-white hover:shadow-xs hover:shadow-slate-300/50 active:bg-white/75 active:text-slate-800 active:shadow-slate-300/10"
+            class="flex items-center gap-3 rounded-lg px-4 py-2.5 font-semibold text-black hover:bg-white hover:shadow-xs hover:shadow-slate-300/50 active:bg-white/75 active:text-slate-800 active:shadow-slate-300/10"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-door-closed-icon lucide-door-closed"><path d="M10 12h.01"/><path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14"/><path d="M2 20h20"/></svg>
             <span>Cerrar Sesión</span>
@@ -255,7 +257,7 @@
                 class="font-medium text-purple-600 transition hover:text-blue-700"
                 href="#"
                 target="_blank"
-                >Dave Clavijo - Carolina Moran</a
+                >Carolina Moran - </a
               ></span
             >
           </div>

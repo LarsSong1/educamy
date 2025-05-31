@@ -30,7 +30,7 @@ class GeneratedContent(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     grade = models.CharField(max_length=200)  # Ej: "Primero, Segundo, Tercero"
-    topic = models.CharField(max_length=255, blank=True, null=True)
+    topic = models.JSONField(default=[])
     pdf_file = models.FileField(upload_to='contenidos_pdf/', null=True, blank=True)
     generated_content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)

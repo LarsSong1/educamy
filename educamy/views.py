@@ -19,6 +19,11 @@ from django.shortcuts import get_object_or_404
 from math import ceil
 # Cargar variables de entorno
 load_dotenv()
+
+
+
+
+
 # Configurar la API de Gemini
 # genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 genai.configure(api_key='AIzaSyDf0rm3_GvwCFX_Ae7pzIBNkALXWjhJmjk')
@@ -77,8 +82,12 @@ def logoutApp(request):
 
 class DashboardView(View):
     def get(self, request, *args, **kwargs):
+        itineraries = GeneratedContent.objects.filter(user=request.user).order_by('-created_at')
+        itinerariesCount = itineraries.count()
         context = {
             'user': request.user,
+            'itineraries': itineraries,
+            'itinerariesCount': itinerariesCount,
         }
         return render(request, 'dashboard.html', context)
     
@@ -86,9 +95,12 @@ class DashboardView(View):
 
 class ItinerariesView(View):
     def get(self, request, *args, **kwargs):
+        itineraries = GeneratedContent.objects.filter(user=request.user).order_by('-created_at')
+        print(itineraries)
      
         context = {
             'user': request.user,
+            'itineraries': itineraries,
                   
         }
         return render(request, 'itineraries.html', context)
@@ -146,27 +158,39 @@ class SchoolSubjectDeleteView(View):
 
 
 
-def extractTopicsTable(html_string):
-    """
-    Extrae los temas desde una tabla HTML.
-    Asume que el tema está en la última columna de cada fila (<td>).
-    """
-    temas = []
-    try:
-        soup = BeautifulSoup(html_string, 'html.parser')
-        filas = soup.find_all('tr')
 
-        # Saltar el encabezado si existe (thead o primera fila)
-        for fila in filas[1:]:  # Empezamos en 1 para saltar encabezado
-            columnas = fila.find_all('td')
-            if columnas:
-                tema = columnas[-1].get_text(strip=True)  # Última columna = Tema
-                temas.append(tema)
-    except Exception as e:
-        print(f"Error extrayendo temas de la tabla: {e}")
-    
-    return temas
 
+def extractTopicContentPerUnit(html_string):
+    soup = BeautifulSoup(html_string, 'html.parser')
+    unidades = []
+
+    # Cada tabla representa una unidad
+    tablas = soup.find_all('table')
+
+    for tabla in tablas:
+        contenido = []
+        filas = tabla.find_all('tr')
+
+        for fila in filas:
+            celdas = fila.find_all('td')
+            if len(celdas) >= 2:
+                titulo = celdas[0].get_text(strip=True)
+                if titulo.lower() == 'contenidos':
+                    # Aquí extraemos el contenido, puede estar en <ul><li> o en texto plano separado
+                    contenido_html = celdas[1]
+                    # Si hay <li>, extraemos cada ítem
+                    items = contenido_html.find_all('li')
+                    if items:
+                        contenido = [li.get_text(strip=True) for li in items]
+                    else:
+                        # Si no hay <li>, extraemos texto dividido por saltos de línea o puntos
+                        texto = contenido_html.get_text(separator='\n').strip()
+                        contenido = [line.strip() for line in texto.split('\n') if line.strip()]
+                    break  # Ya encontramos contenidos en esta tabla, pasamos a la siguiente
+
+        unidades.append(contenido)
+
+    return unidades
 
 
 def parse_gemini_response_to_units(text):
@@ -244,7 +268,6 @@ def format_units_to_boxes(text):
     return html
 
 
-
 def splitDatesInUnits(start_date, end_date, units_number):
     index_days = [0, 1, 2, 3, 4]  # lunes a viernes
     available_days = []
@@ -272,34 +295,7 @@ def splitDatesInUnits(start_date, end_date, units_number):
 
 
 
-def formatTextToHtml(text):
-    """
-    Formatea el texto generado por Gemini a HTML elegante.
-    """
-    html_result = ""
-    lines = text.splitlines()
 
-    for line in lines:
-        line = line.strip()
-
-        if line.startswith("Unidad"):
-            html_result += f"<h2 style='margin-top: 40px; font-size: 24px;'>{line}</h2>\n"
-        elif line.startswith("Título:"):
-            html_result += f"<p><strong>{line}</strong></p>\n"
-        elif any(titulo in line for titulo in ["Objetivos específicos:", "Contenidos:", "Orientaciones metodológicas:", "Criterios de evaluación:", "Indicadores de evaluación:"]):
-            html_result += f"<h3 style='margin-top: 20px; font-size: 20px;'>{line}</h3>\n"
-            html_result += "<ul>\n"  # Empezar lista para los bullets
-        elif line.startswith("- "):
-            html_result += f"<li>{line[2:]}</li>\n"
-        elif line == "":
-            html_result += "</ul>\n"  # Cerrar lista cuando hay línea vacía
-        else:
-            html_result += f"<p>{line}</p>\n"
-
-    if not html_result.endswith("</ul>\n"):
-        html_result += "</ul>\n"
-
-    return html_result
 
 # models = genai.list_models()
 
@@ -413,14 +409,15 @@ NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en
                 html = HTML(string=html_string)
                 html.write_pdf(output.name)
 
+                topics = extractTopicContentPerUnit(html_string)
                 content = GeneratedContent.objects.create(
                     user=request.user,
                     school_subject=school_subject,
                     start_date=start_date,
                     end_date=end_date,
                     grade=level,
-                    topic="Planificación Anual",
-                    generated_content=html_string,
+                    topic=topics,
+                    generated_content=html_string,  
                 )
 
                 with open(output.name, 'rb') as pdf_file:
