@@ -27,6 +27,7 @@ class SchoolSubject(models.Model):
 class GeneratedContent(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     school_subject = models.ForeignKey(SchoolSubject, on_delete=models.CASCADE)
+    objetives = models.JSONField(default=[])
     start_date = models.DateField()
     end_date = models.DateField()
     grade = models.CharField(max_length=200)  # Ej: "Primero, Segundo, Tercero"

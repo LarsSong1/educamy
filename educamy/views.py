@@ -17,6 +17,7 @@ from .models import GeneratedContent, SchoolSubject
 from .forms import AnnualPlanForm, AddSchoolSubjectForm
 from django.shortcuts import get_object_or_404
 from math import ceil
+from django.contrib.auth.models import User
 # Cargar variables de entorno
 load_dotenv()
 
@@ -82,14 +83,26 @@ def logoutApp(request):
 
 class DashboardView(View):
     def get(self, request, *args, **kwargs):
-        itineraries = GeneratedContent.objects.filter(user=request.user).order_by('-created_at')
-        itinerariesCount = itineraries.count()
-        context = {
-            'user': request.user,
-            'itineraries': itineraries,
-            'itinerariesCount': itinerariesCount,
-        }
-        return render(request, 'dashboard.html', context)
+
+
+        if request.user.is_superuser:
+            users = User.objects.all()
+            print("users", users)
+            usersCount = len(users)
+            context = {
+                'users': users,
+                'usersCount': usersCount
+            }
+            return render(request, 'adminDashboard.html', context)
+        else:
+            itineraries = GeneratedContent.objects.filter(user=request.user).order_by('-created_at')
+            itinerariesCount = itineraries.count()
+            context = {
+                'user': request.user,
+                'itineraries': itineraries,
+                'itinerariesCount': itinerariesCount,
+            }
+            return render(request, 'dashboard.html', context)
     
 
 
@@ -157,6 +170,33 @@ class SchoolSubjectDeleteView(View):
         return redirect('educamy:school_subjects')
 
 
+def extractTObjetivePerUnit(html_string):
+    soup = BeautifulSoup(html_string, 'html.parser')
+    unidades = []
+
+    tablas = soup.find_all('table')
+
+    for tabla in tablas:
+        contenido = []
+        filas = tabla.find_all('tr')
+
+        for fila in filas:
+            celdas = fila.find_all('td')
+            if len(celdas) >= 2:
+                titulo = celdas[0].get_text(strip=True).lower()
+                if "objetivos" in titulo:
+                    contenido_html = celdas[1]
+                    items = contenido_html.find_all('li')
+                    if items:
+                        contenido = [li.get_text(strip=True) for li in items]
+                    else:
+                        texto = contenido_html.get_text(separator='\n').strip()
+                        contenido = [line.strip() for line in texto.split('\n') if line.strip()]
+                    break
+
+        unidades.append(contenido)
+
+    return unidades
 
 
 
@@ -410,10 +450,12 @@ NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en
                 html.write_pdf(output.name)
 
                 topics = extractTopicContentPerUnit(html_string)
+                objetives = extractTObjetivePerUnit(html_string)
                 content = GeneratedContent.objects.create(
                     user=request.user,
                     school_subject=school_subject,
                     start_date=start_date,
+                    objetives=objetives,
                     end_date=end_date,
                     grade=level,
                     topic=topics,

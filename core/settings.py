@@ -41,7 +41,6 @@ INSTALLED_APPS = [
 
     # App
     'educamy',
-    'django_dbml',
 
     # Dependencies
     'tailwind',

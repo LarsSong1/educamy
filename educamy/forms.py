@@ -5,6 +5,8 @@ from django.utils.translation import gettext_lazy as _
 from .models import Profile
 from django.contrib.auth.forms import UserChangeForm
 from .models import SchoolSubject
+from django.core.exceptions import ValidationError
+from datetime import date
   # Ya lo tienes arriba, perfecto
 
 
@@ -124,6 +126,27 @@ class AnnualPlanForm(forms.Form):
         widget=forms.Select(attrs={'class': 'absolute'}),
         
     )
+
+
+    def clean_start_date(self):
+        start_date = self.cleaned_data['start_date']
+        if start_date < date.today():
+            raise ValidationError("La fecha de inicio no puede ser anterior a hoy.")
+        return start_date
+
+    def clean_end_date(self):
+        end_date = self.cleaned_data['end_date']
+        if end_date < date.today():
+            raise ValidationError("La fecha de fin no puede ser anterior a hoy.")
+        return end_date
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get("start_date")
+        end_date = cleaned_data.get("end_date")
+
+        if start_date and end_date and end_date < start_date:
+            raise ValidationError("La fecha de fin debe ser igual o posterior a la fecha de inicio.")
 
 
 
