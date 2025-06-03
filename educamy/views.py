@@ -18,6 +18,7 @@ from .forms import AnnualPlanForm, AddSchoolSubjectForm
 from django.shortcuts import get_object_or_404
 from math import ceil
 from django.contrib.auth.models import User
+import json
 # Cargar variables de entorno
 load_dotenv()
 
@@ -455,10 +456,10 @@ NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en
                     user=request.user,
                     school_subject=school_subject,
                     start_date=start_date,
-                    objetives=objetives,
                     end_date=end_date,
                     grade=level,
-                    topic=topics,
+                    topic=topics if isinstance(topics, list) else [],
+                    objetives=objetives if isinstance(objetives, list) else [],
                     generated_content=html_string,  
                 )
 

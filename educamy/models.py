@@ -27,11 +27,11 @@ class SchoolSubject(models.Model):
 class GeneratedContent(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     school_subject = models.ForeignKey(SchoolSubject, on_delete=models.CASCADE)
-    objetives = models.JSONField(default=[])
+    objetives = models.JSONField(default=list)
     start_date = models.DateField()
     end_date = models.DateField()
     grade = models.CharField(max_length=200)  # Ej: "Primero, Segundo, Tercero"
-    topic = models.JSONField(default=[])
+    topic = models.JSONField(default=list)
     pdf_file = models.FileField(upload_to='contenidos_pdf/', null=True, blank=True)
     generated_content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
