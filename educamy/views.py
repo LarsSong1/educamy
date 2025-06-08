@@ -13,8 +13,8 @@ import google.generativeai as genai
 from bs4 import BeautifulSoup
 from datetime import timedelta
 from django.contrib.auth.decorators import login_required
-from .models import GeneratedContent, SchoolSubject
-from .forms import AnnualPlanForm, AddSchoolSubjectForm
+from .models import GeneratedContent, SchoolSubject, MicroPlan, AnualPlan
+from .forms import itinerarieForm, AddSchoolSubjectForm
 from django.shortcuts import get_object_or_404
 from math import ceil
 from django.contrib.auth.models import User
@@ -96,11 +96,14 @@ class DashboardView(View):
             }
             return render(request, 'adminDashboard.html', context)
         else:
-            itineraries = GeneratedContent.objects.filter(user=request.user).order_by('-created_at')
-            itinerariesCount = itineraries.count()
+            annualItineraries = AnualPlan.objects.filter(generatedContentId__user=request.user).order_by('-created_at')
+            microItineraries = MicroPlan.objects.filter(generatedContentId__user=request.user).order_by('-created_at')
+            itinerariesCount = annualItineraries.count()
+            itinerariesCount += microItineraries.count()
             context = {
                 'user': request.user,
-                'itineraries': itineraries,
+                'annualItineraries': annualItineraries,
+                'microItineraries': microItineraries,
                 'itinerariesCount': itinerariesCount,
             }
             return render(request, 'dashboard.html', context)
@@ -109,13 +112,19 @@ class DashboardView(View):
 
 class ItinerariesView(View):
     def get(self, request, *args, **kwargs):
-        itineraries = GeneratedContent.objects.filter(user=request.user).order_by('-created_at')
-        print(itineraries)
+        annualItineraries = AnualPlan.objects.filter(generatedContentId__user=request.user).order_by('-created_at')
+        microItineraries = MicroPlan.objects.filter(generatedContentId__user=request.user).order_by('-created_at')
+        itinerariesCount = annualItineraries.count()
+        itinerariesCount += microItineraries.count()
+     
+
+        print(microItineraries)
      
         context = {
-            'user': request.user,
-            'itineraries': itineraries,
-                  
+                'user': request.user,
+                'annualItineraries': annualItineraries,
+                'microItineraries': microItineraries,
+                'itinerariesCount': itinerariesCount,
         }
         return render(request, 'itineraries.html', context)
 
@@ -309,31 +318,64 @@ def format_units_to_boxes(text):
     return html
 
 
+# def splitDatesInUnits(start_date, end_date, units_number):
+#     index_days = [0, 1, 2, 3, 4]  # lunes a viernes
+#     available_days = []
+#     current_date = start_date
+#     while current_date <= end_date:
+#         if current_date.weekday() in index_days:
+#             available_days.append(current_date)
+#         current_date += timedelta(days=1)
+
+#     total_days = len(available_days)
+
+#     if units_number > total_days:
+#         units_number = total_days
+
+#     units = []
+#     hop = ceil(total_days / units_number)
+#     for i in range(0, total_days, hop):
+#         units.append(available_days[i:i+hop])
+
+#     if len(units) > units_number:
+#         units[-2].extend(units[-1])
+#         units = units[:-1]
+
+#     return units
+
+
+
 def splitDatesInUnits(start_date, end_date, units_number):
-    index_days = [0, 1, 2, 3, 4]  # lunes a viernes
+    # Evitamos división por cero:
+    if units_number < 1:
+        raise ValueError("Units_number debe ser al menos 1")
+    # Calculamos los días hábiles:
+    index_days = [0,1,2,3,4]
     available_days = []
-    current_date = start_date
-    while current_date <= end_date:
-        if current_date.weekday() in index_days:
-            available_days.append(current_date)
-        current_date += timedelta(days=1)
+    current = start_date
+    while current <= end_date:
+        if current.weekday() in index_days:
+            available_days.append(current)
+        current += timedelta(days=1)
 
     total_days = len(available_days)
+    # Si no hay días hábiles, devolvemos lista vacía
+    if total_days == 0:
+        return []
 
+    # Si el número de unidades supera días disponibles, ajustamos
     if units_number > total_days:
         units_number = total_days
 
-    units = []
     hop = ceil(total_days / units_number)
-    for i in range(0, total_days, hop):
-        units.append(available_days[i:i+hop])
+    units = [ available_days[i:i+hop] for i in range(0, total_days, hop) ]
 
+    # Si por el redondeo obtenemos más trozos que unidades, juntamos los dos últimos
     if len(units) > units_number:
         units[-2].extend(units[-1])
-        units = units[:-1]
+        units.pop()
 
     return units
-
 
 
 
@@ -345,76 +387,99 @@ def splitDatesInUnits(start_date, end_date, units_number):
 modelName = 'gemini-1.5-flash-002'
 
 
-
-def generar_contenido(request):
-    print("API Key configurada correctamente. ", os.getenv('GEMINI_API_KEY'))
+def generateContent(request):
+    user = request.user
     if request.method == 'POST':
-        form = AnnualPlanForm(request.POST)
+        form = itinerarieForm(request.POST)
         if form.is_valid():
             start_date = form.cleaned_data['start_date']
             end_date = form.cleaned_data['end_date']
-            # days_class = form.cleaned_data['days_class']
             units_number = form.cleaned_data['units_number']
+            itinearieType = form.cleaned_data['itinerarieType']
             level = form.cleaned_data['level']
             school_subject = form.cleaned_data['school_subject']
-
             units = splitDatesInUnits(start_date, end_date, units_number)
+
             # Inicializar Gemini
             model = genai.GenerativeModel(modelName)
             chat = model.start_chat(history=[])
 
+
+            if itinearieType == 'micro':
+                # Generar un solo PROMPT grande
+                generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user)
+                return redirect('educamy:dashboard')
+            elif itinearieType == 'annual':
+                # Generar un solo PROMPT grande
+                generarPlanAnual(start_date, end_date, units_number, level, school_subject, chat, user)
+                return redirect('educamy:dashboard')
+            elif itinearieType == 'quiz':
+                generarPreguntasMateria()
+
+    else:
+        form = itinerarieForm()
+
+    return render(request, 'generateContent.html', {'form': form})
+            
+
+
+
+def generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user):
+    print("API Key configurada correctamente. ", os.getenv('GEMINI_API_KEY'))
+    
+
             # Generar un solo PROMPT grande
-            prompt = f"""
-Eres un asistente educativo profesional. Genera la planificación completa de {units_number} unidades didácticas para la materia "{school_subject.name}", nivel "{level}" de educación básica.
+    prompt = f"""
+                        Eres un asistente educativo profesional. Genera la planificación completa de {units_number} unidades didácticas para la materia "{school_subject.name}", nivel "{level}" de educación básica.
 
-Para cada unidad proporciona:
+                        Para cada unidad proporciona:
 
-- Título de la unidad
-- 2 objetivos específicos
-- 3 contenidos temáticos principales
-- 2 orientaciones metodológicas
-- 2 criterios de evaluación
-- 2 indicadores de evaluación
+                        - Título de la unidad
+                        - 2 objetivos específicos
+                        - 3 contenidos temáticos principales
+                        - 2 orientaciones metodológicas
+                        - 2 criterios de evaluación
+                        - 2 indicadores de evaluación
 
-Formato de salida para cada unidad:
+                        Formato de salida para cada unidad:
 
-Unidad {units_number}:
-Título: {{Título sugerido}}
+                        Unidad {units_number}:
+                        Título: {{Título sugerido}}
 
-Objetivos específicos:
-- Objetivo 1
-- Objetivo 2
+                        Objetivos específicos:
+                        - Objetivo 1
+                        - Objetivo 2
 
-Contenidos:
-- Contenido 1
-- Contenido 2
-- Contenido 3
+                        Contenidos:
+                        - Contenido 1
+                        - Contenido 2
+                        - Contenido 3
 
-Orientaciones metodológicas:
-- Metodología 1
-- Metodología 2
+                        Orientaciones metodológicas:
+                        - Metodología 1
+                        - Metodología 2
 
-Criterios de evaluación:
-- Criterio 1
-- Criterio 2
+                        Criterios de evaluación:
+                        - Criterio 1
+                        - Criterio 2
 
-Indicadores de evaluación:
-- Indicador 1
-- Indicador 2
+                        Indicadores de evaluación:
+                        - Indicador 1
+                        - Indicador 2
 
-NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en el formato claro y directo.
-"""
+                        NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en el formato claro y directo.
+                    """
 
-            generated_schema = "⚠️ Error al generar contenido."
+    generated_schema = "⚠️ Error al generar contenido."
 
-            try:
-                response = chat.send_message(prompt)
-                generated_schema = response.text
-            except Exception as e:
-                print(f"Error generando contenido: {e}")
+    try:
+        response = chat.send_message(prompt)
+        generated_schema = response.text
+    except Exception as e:
+        print(f"Error generando contenido: {e}")
 
             # Crear contenido HTML para el PDF
-            html_string = f"""
+    html_string = f"""
 <html>
 <head>
   <style>
@@ -428,7 +493,7 @@ NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en
   </style>
 </head>
 <body>
-  <h1>Plan Anual de Clase</h1>
+  <h1>Plan Microcurricular de Clase</h1>
   <p><strong>Fecha Inicio:</strong> {start_date}</p>
   <p><strong>Fecha Fin:</strong> {end_date}</p>
   
@@ -444,34 +509,197 @@ NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en
 </body>
 </html>
 """
+    
+
 
             # Crear PDF
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as output:
-                html = HTML(string=html_string)
-                html.write_pdf(output.name)
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as output:
+        html = HTML(string=html_string)
+        html.write_pdf(output.name)
 
-                topics = extractTopicContentPerUnit(html_string)
-                objetives = extractTObjetivePerUnit(html_string)
-                content = GeneratedContent.objects.create(
-                    user=request.user,
+
+    gen = GeneratedContent.objects.create(user=user, school_subject=school_subject)
+
+    topics = extractTopicContentPerUnit(html_string)
+    objetives = extractTObjetivePerUnit(html_string)
+    content = MicroPlan.objects.create(
+                    generatedContentId = gen,
                     school_subject=school_subject,
                     start_date=start_date,
                     end_date=end_date,
                     grade=level,
                     topic=topics if isinstance(topics, list) else [],
-                    objetives=objetives if isinstance(objetives, list) else [],
+                    goals=objetives if isinstance(objetives, list) else [],
                     generated_content=html_string,  
                 )
 
-                with open(output.name, 'rb') as pdf_file:
-                    content.pdf_file.save(f"plan_anual_{content.pk}.pdf", pdf_file)
+    with open(output.name, 'rb') as pdf_file:
+        content.pdf_file.save(f"plan_micro_{content.pk}.pdf", pdf_file)
 
-            return redirect('educamy:dashboard')
 
-    else:
-        form = AnnualPlanForm()
+    
 
-    return render(request, 'generateContent.html', {'form': form})
+
+def generarPlanAnual(start_date, end_date, units_number, level, school_subject, chat, user):
+    prompt = f"""
+Eres un asistente educativo profesional. Genera la planificación anual de {units_number} unidades para la materia "{school_subject.name}", nivel "{level}", usando **exactamente** este formato (sin añadir nada más):
+
+Unidad 1:
+Título: {{Título sugerido}}
+Objetivos específicos:
+- Objetivo 1
+- Objetivo 2
+Contenidos:
+- Contenido 1
+- Contenido 2
+- Contenido 3
+Orientaciones metodológicas:
+- Metodología 1
+- Metodología 2
+Criterios de evaluación:
+- Criterio 1
+- Criterio 2
+Duracion en semanas: {{Duración en semanas sugerida}}
+- Indicador 1
+- Indicador 2
+
+Repite para Unidad 2, Unidad 3, …, Unidad {units_number}.
+Detalles:
+- Fecha de inicio: {start_date}
+- Fecha de fin:    {end_date}
+"""
+    # 1) Llamada a Gemini
+    try:
+        resp = chat.send_message(prompt)
+        generated_schema = resp.text
+    except Exception as e:
+        print("Error gemini:", e)
+        return
+
+    # 2) Parsear en unidades
+    unidades = parse_gemini_response_to_units(generated_schema)
+    if not unidades:
+        print("Sigue sin parsear unidades:", generated_schema)
+        return
+
+    # 3) Generar PDF completo
+    html_string = f"""
+    <html><body>
+      <h1>Plan Anual: {school_subject.name}</h1>
+      <p>Nivel: {level}</p>
+      <p>Desde {start_date} hasta {end_date}</p>
+      {format_units_to_boxes(generated_schema)}
+    </body></html>
+    """
+
+
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as output:
+        html = HTML(string=html_string)
+        html.write_pdf(output.name)
+    
+    gen = GeneratedContent.objects.create(user=user, school_subject=school_subject)
+
+    # 5) Acumular en listas cada campo JSON
+    titles       = [u["titulo"]      for u in unidades]
+    objectives   = [u["objetivos"]   for u in unidades]
+    contents     = [u["contenidos"]  for u in unidades]
+    metodologias = [u["metodologias"]for u in unidades]
+    criterios    = [u["criterios"]   for u in unidades]
+    indicadores  = [u["indicadores"] for u in unidades]
+
+    
+        # 5) Crear un AnualPlan por unidad
+    plan = AnualPlan.objects.create(
+        generatedContentId    = gen,
+        school_subject        = school_subject,
+        unit_title            = f"Plan Anual ({units_number} unidades)",
+        goals       = objectives,
+        unit_contents         = contents,
+        methodologies         = metodologias,
+        evaluation_criteria   = criterios,
+        evaluation_indicators = indicadores,
+    )
+
+    with open(output.name, "rb") as f:
+        plan.pdf_file.save(f"plan_anual_{plan.pk}.pdf", f)
+
+    
+
+
+
+  
+
+
+
+def generarPreguntasMateria(request, school_subject, start_date, end_date, level):
+    # Iniciar conversación con Gemini para generar preguntas
+    model = genai.GenerativeModel('gemini-1.5-flash-002')
+    chat = model.start_chat(history=[])
+
+    # Crear el prompt para generar preguntas basadas en la materia seleccionada
+    prompt = f"""
+    Eres un asistente educativo. Genera un conjunto de preguntas relacionadas con la materia '{school_subject.name}'.
+    Las preguntas deben ser adecuadas para un nivel '{level}' y deben cubrir los siguientes aspectos:
+    - Definiciones clave
+    - Aplicación práctica de conceptos
+    - Preguntas de reflexión
+    - Preguntas para evaluar comprensión
+
+    Utiliza un estilo claro y profesional.
+    """
+
+    generated_questions = "⚠️ Error al generar preguntas."
+    try:
+        response = chat.send_message(prompt)
+        generated_questions = response.text
+    except Exception as e:
+        print(f"Error generando preguntas: {e}")
+
+    # Generar HTML para las preguntas
+    html_string = f"""
+    <html>
+    <head>
+      <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; font-size: 14px; line-height: 1.6; }}
+        h1 {{ color: #333; }}
+        ul {{ padding-left: 20px; }}
+        li {{ margin-bottom: 10px; }}
+      </style>
+    </head>
+    <body>
+      <h1>Preguntas sobre la materia: {school_subject.name}</h1>
+      <p><strong>Fecha de inicio:</strong> {start_date}</p>
+      <p><strong>Fecha de fin:</strong> {end_date}</p>
+      <h2>Preguntas generadas:</h2>
+      <ul>
+        {''.join(f'<li>{question}</li>' for question in generated_questions.splitlines())}
+      </ul>
+    </body>
+    </html>
+    """
+
+    # Crear PDF para las preguntas
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as output:
+        html = HTML(string=html_string)
+        html.write_pdf(output.name)
+
+        content = GeneratedContent.objects.create(
+            user=request.user,
+            school_subject=school_subject,
+            start_date=start_date,
+            end_date=end_date,
+            grade=level,
+            generated_content=html_string,
+        )
+
+        # Guardar el PDF generado
+        with open(output.name, 'rb') as pdf_file:
+            content.pdf_file.save(f"preguntas_{content.pk}.pdf", pdf_file)
+
+    return redirect('educamy:dashboard')  # Redirigir al dashboard
+
+
 
 
 

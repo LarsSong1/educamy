@@ -106,15 +106,25 @@ LEVELS = [
 BASE_INPUT_CLASS = 'appearance-none w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 transition'
 
 
-class AnnualPlanForm(forms.Form):
+ITINERARY_CHOICES = [
+        ('micro', 'Plan Microcurricular'),
+        ('annual', 'Plan Anual'),
+        ('quiz', 'Plan de Evaluación [Preguntas]'),
+    ]
+
+class itinerarieForm(forms.Form):
     start_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label="Fecha de inicio")
     end_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label="Fecha de fin")
-    # days_class = forms.MultipleChoiceField(
-    #     choices=DAYS_CHOICES,
-    #     widget=forms.CheckboxSelectMultiple,
-    #     label="Días de clases (elige varios)"
-    # )
-    units_number = forms.IntegerField(min_value=1, label="Número de unidades")
+    itinerarieType = forms.ChoiceField(
+        choices=ITINERARY_CHOICES,
+        label="Tipo de itinerario",
+        widget=forms.Select(attrs={'class': 'absolute'}),
+    )
+    units_number   = forms.IntegerField(
+        label="Número de unidades",
+        min_value=1,
+        error_messages={'min_value': "Debes generar al menos una unidad."}
+    )
     level = forms.ChoiceField(
         choices=LEVELS,
         label="Nivel",
