@@ -334,32 +334,6 @@ def format_units_to_boxes(text):
     return html
 
 
-# def splitDatesInUnits(start_date, end_date, units_number):
-#     index_days = [0, 1, 2, 3, 4]  # lunes a viernes
-#     available_days = []
-#     current_date = start_date
-#     while current_date <= end_date:
-#         if current_date.weekday() in index_days:
-#             available_days.append(current_date)
-#         current_date += timedelta(days=1)
-
-#     total_days = len(available_days)
-
-#     if units_number > total_days:
-#         units_number = total_days
-
-#     units = []
-#     hop = ceil(total_days / units_number)
-#     for i in range(0, total_days, hop):
-#         units.append(available_days[i:i+hop])
-
-#     if len(units) > units_number:
-#         units[-2].extend(units[-1])
-#         units = units[:-1]
-
-#     return units
-
-
 
 def splitDatesInUnits(start_date, end_date, units_number):
     # Evitamos división por cero:
@@ -444,7 +418,7 @@ def generarPlanMicrocurricular(start_date, end_date, units_number, level, school
     print("API Key configurada correctamente. ", os.getenv('GEMINI_API_KEY'))
     
 
-            # Generar un solo PROMPT grande
+           
     prompt = f"""
                         Eres un asistente educativo profesional. Genera la planificación completa de {units_number} unidades didácticas para la materia "{school_subject.name}", nivel "{level}" de educación básica.
 
@@ -631,10 +605,14 @@ Detalles:
         school_subject        = school_subject,
         unit_title            = f"Plan Anual ({units_number} unidades)",
         goals       = objectives,
+        grade = level,
+        start_date = start_date,
+        end_date   = end_date,
         unit_contents         = contents,
         methodologies         = metodologias,
         evaluation_criteria   = criterios,
         evaluation_indicators = indicadores,
+        
     )
 
     with open(output.name, "rb") as f:

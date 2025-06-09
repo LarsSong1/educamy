@@ -1,17 +1,24 @@
 {% extends 'layout.html' %}
 
 {% block dashboardContent %}
-<div>
-    <h2 class="text-3xl font-bold">Bienvenido
+<div class="flex justify-between items-center mb-4">
+    <div>
+        <h2 class="text-3xl font-bold">Bienvenido
         <span class="text-purple-900">
             {{ user }}
         </span>
         !
-    </h2>
-    <h6 class="text-sm ">
-        Crea y gestiona tus itinerarios de clase con ayuda de
-        <span class="text-orange-900 font-bold">IA</span>
-    </h6>
+        </h2>
+        <h6 class="text-sm ">
+            Crea y gestiona tus itinerarios de clase con ayuda de
+            <span class="text-orange-900 font-bold">IA</span>
+        </h6>
+    </div>
+
+    <div>
+        <a class="text-sm bg-purple-900 text-white px-4 rounded-md py-2"
+                href="{% url 'educamy:generate_content' %}">Generar Itinerario</a>
+    </div>
 
 </div>
 
@@ -80,104 +87,170 @@
 
 <section>
     <div class="flex justify-between items-center">
-        <h2 class="text-xl font-bold ">Itinerarios</h2>
+        <h2 class="text-xl font-bold ">Mis Itinerarios</h2>
         <div class="flex gap-4 items-center">
-            <a class="text-sm bg-purple-900 text-white px-4 rounded-md py-2"
-                href="{% url 'educamy:generate_content' %}">Generar Itinerario</a>
-            <a class="text-xs opacity-75" href="{% url 'educamy:itineraries' %}">
+            
+            {% comment %} <a class="text-xs opacity-75" href="{% url 'educamy:itineraries' %}">
                 Ver Todos
-            </a>
+            </a> {% endcomment %}
         </div>
     </div>
-    <div>
-        <h1 class="font-bold">Itinerarios Microcurriculares</h1>
-    </div>
-    <div class="grid lg:grid-cols-3 gap-4 grid-cols-1 mt-2">
-        {% for itinerarie in microItineraries %}
 
-        <div
-            class="border-1 border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
-            <div class="flex flex-col justify-center w-full">
-                <h3 class="text-md font-bold">Itinerario de {{itinerarie.school_subject}}</h3>
-                <div class="flex gap-2 items-center opacity-75">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-book-icon lucide-book">
-                        <path
-                            d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
-                    </svg>
-                    <h5 class="text-sm">{{itinerarie.school_subject}}</h5>
+
+    <div class="flex gap-4 mb-4 mt-2">
+        <button id="microItinerariesBtn" class="bg-green-600 rounded-md px-4 py-2 cursor-pointer text-xs font-semibold">
+            Microcurriculares
+        </button>
+        <button id="annualItinerariesBtn" class="bg-green-600 rounded-md px-4 py-2 cursor-pointer text-xs font-semibold">
+            Anuales
+        </button>
+    </div>
+
+
+
+    <div id="microItineraries">
+        <h3 class="text-sm opacity-75 mb-4">Registros de itinerarios Microcurriculares generados</h3>
+        <div class="grid lg:grid-cols-3 gap-4 grid-cols-1 mt-2" >
+            
+            {% for itinerarie in microItineraries %}
+
+            <div
+                class="border-1 border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
+                <div class="flex flex-col justify-center w-full">
+                    <div class="flex justify-between items-center w-full mb-2">
+                        <h3 class="text-md font-bold">Itinerario de {{itinerarie.school_subject}}</h3>
+                        <a href="{{itinerarie.pdf_file.url}}"
+                            download="{{itinerarie.school_subject}}_itinerario.pdf"
+                            
+                            class="cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="orange" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-down-icon lucide-file-down"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+                        </a>
+                    </div>
+                    <div class="flex gap-2 items-center opacity-75">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-book-icon lucide-book">
+                            <path
+                                d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
+                        </svg>
+                        <h5 class="text-sm">{{itinerarie.school_subject}}</h5>
+                    </div>
+                    <div class="flex gap-2 items-center opacity-75">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-calendar-icon lucide-calendar">
+                            <path d="M8 2v4" />
+                            <path d="M16 2v4" />
+                            <rect width="18" height="18" x="3" y="4" rx="2" />
+                            <path d="M3 10h18" />
+                        </svg>
+                        <h5 class="text-sm">{{itinerarie.start_date}} - {{itinerarie.end_date}}</h5>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-semibold mt-2">Objetivos:</h5>
+                        
+                        {% for objetives in itinerarie.goals  %}
+                            {% for objetive in objetives  %}
+                                <p class="text-sm opacity-75 flex gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-goal-icon lucide-goal"><path d="M12 13V2l8 4-8 4"/><path d="M20.561 10.222a9 9 0 1 1-12.55-5.29"/><path d="M8.002 9.997a5 5 0 1 0 8.9 2.02"/></svg>
+                                    {{objetive}}
+                                </p>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                    {% comment %} <a class="w-full text-sm text-center mt-2 bg-green-600 py-1 rounded-md" href="{% url "
+                        educamy:itineraries" %}">Ver Detalles
+                    </a> {% endcomment %}
                 </div>
-                <div class="flex gap-2 items-center opacity-75">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-calendar-icon lucide-calendar">
-                        <path d="M8 2v4" />
-                        <path d="M16 2v4" />
-                        <rect width="18" height="18" x="3" y="4" rx="2" />
-                        <path d="M3 10h18" />
-                    </svg>
-                    <h5 class="text-sm">{{itinerarie.start_date}} - {{itinerarie.end_date}}</h5>
-                </div>
-                {% comment %} <a class="w-full text-sm text-center mt-2 bg-green-600 py-1 rounded-md" href="{% url "
-                    educamy:itineraries" %}">Ver Detalles
-                </a> {% endcomment %}
             </div>
+            {% endfor %}
+
+
+
+
+
         </div>
-        {% endfor %}
-
-
-
-
-
     </div>
 
 
+    <div id="annualItineraries" class="hidden">
+        <h3 class="text-sm opacity-75 mb-4">Registros de itinerarios Anuales generados</h3>
+        <div class="grid lg:grid-cols-3 gap-4 grid-cols-1 mt-2">
+            {% for itinerarie in annualItineraries %}
+            <div
+                class="border-1 border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
+                <div class="flex flex-col justify-center w-full">
+                    <div class="flex justify-between items-center w-full mb-2">
+                        <h3 class="text-md font-bold">Itinerario de {{itinerarie.school_subject}}</h3>
+                        <a href="{{itinerarie.pdf_file.url}}"
+                            download="{{itinerarie.school_subject}}_itinerario.pdf"
+                            
+                            class="cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="orange" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-down-icon lucide-file-down"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+                        </a>
+                    </div>
+                    <div class="flex gap-2 items-center opacity-75">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-book-icon lucide-book">
+                            <path
+                                d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
+                        </svg>
+                        <h5 class="text-sm">{{itinerarie.school_subject}}</h5>
+                    </div>
+                    <div class="flex gap-2 items-center opacity-75">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-calendar-icon lucide-calendar">
+                            <path d="M8 2v4" />
+                            <path d="M16 2v4" />
+                            <rect width="18" height="18" x="3" y="4" rx="2" />
+                            <path d="M3 10h18" />
+                        </svg>
+                        <h5 class="text-sm">{{itinerarie.start_date}} - {{itinerarie.end_date}}</h5>
+                    </div>
 
-    <div>
-        <h1 class="font-bold">Itinerarios Anuales</h1>
-    </div>
-
-
-
-    <div class="grid lg:grid-cols-3 gap-4 grid-cols-1 mt-2">
-        {% for itinerarie in annualItineraries %}
-        <div
-            class="border-1 border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
-            <div class="flex flex-col justify-center w-full">
-                <h3 class="text-md font-bold">Itinerario de {{itinerarie.school_subject}}</h3>
-                <div class="flex gap-2 items-center opacity-75">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-book-icon lucide-book">
-                        <path
-                            d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
-                    </svg>
-                    <h5 class="text-sm">{{itinerarie.school_subject}}</h5>
+                    <div>
+                        <h5 class="text-sm font-semibold mt-2">Metodologias:</h5>
+                        
+                        {% for methodologies in itinerarie.methodologies  %}
+                            {% for method in methodologies  %}
+                                <p class="text-sm opacity-75 flex gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flask-conical-icon lucide-flask-conical"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094"/><path d="M8.5 2h7"/></svg>
+                                    {{method}}
+                                </p>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                    {% comment %} <a class="w-full text-sm text-center mt-2 bg-green-600 py-1 rounded-md" href="{% url "
+                        educamy:itineraries" %}">Ver Detalles
+                    </a> {% endcomment %}
                 </div>
-                <div class="flex gap-2 items-center opacity-75">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="lucide lucide-calendar-icon lucide-calendar">
-                        <path d="M8 2v4" />
-                        <path d="M16 2v4" />
-                        <rect width="18" height="18" x="3" y="4" rx="2" />
-                        <path d="M3 10h18" />
-                    </svg>
-                    <h5 class="text-sm">{{itinerarie.start_date}} - {{itinerarie.end_date}}</h5>
-                </div>
-                {% comment %} <a class="w-full text-sm text-center mt-2 bg-green-600 py-1 rounded-md" href="{% url "
-                    educamy:itineraries" %}">Ver Detalles
-                </a> {% endcomment %}
             </div>
+            {% endfor %}
+
+
+
+
+
         </div>
-        {% endfor %}
-
-
-
-
-
     </div>
 
+    <script>
+        const microItinerariesBtn  = document.getElementById('microItinerariesBtn');
+        const annualItinerariesBtn = document.getElementById('annualItinerariesBtn');
+        const microSection         = document.getElementById('microItineraries');
+        const annualSection        = document.getElementById('annualItineraries');
+
+        microItinerariesBtn.addEventListener('click', () => {
+            microSection.classList.remove('hidden');
+            annualSection.classList.add('hidden');
+        });
+
+        annualItinerariesBtn.addEventListener('click', () => {
+            annualSection.classList.remove('hidden');
+            microSection.classList.add('hidden');
+        });
+    </script>
 </section>
 {% endblock %}

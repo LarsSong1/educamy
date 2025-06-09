@@ -37,12 +37,15 @@ class GeneratedContent(models.Model):
 class AnualPlan(models.Model):
     generatedContentId = models.ForeignKey(GeneratedContent, on_delete=models.CASCADE, related_name='generated_annualplans', null=True, blank=True)
     school_subject = models.ForeignKey(SchoolSubject, on_delete=models.CASCADE, null=True, blank=True)
-    
     unit_title = models.CharField(max_length=255)
     goals = models.JSONField(default=list)
     unit_contents = models.JSONField(default=list)
     methodologies = models.JSONField(default=list)
     pdf_file = models.FileField(upload_to='annualplan_pdf/', null=True, blank=True)
+    start_date = models.DateField(default=timezone.now)
+    end_date   = models.DateField(default=timezone.now)
+    year = models.PositiveIntegerField(default=datetime.datetime.now().year)
+    grade = models.CharField(max_length=200, default='Primero')
     evaluation_criteria = models.JSONField(default=list)
     evaluation_indicators = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
