@@ -19,16 +19,23 @@
       
         {% for itinerarie in microItineraries %}
         
-        
         <div class="space-y-2 border-1 h-fit border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
           <div class="flex justify-between w-full items-center">
-            <h2 class="font-bold text-md tracking-tight">Itinerario de {{itinerarie.school_subject}}</h2>
-            <a href="#" class="bg-red-900 rounded-md text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
-            </a>
+            <h2 class="font-bold text-md tracking-tight">
+              Itinerario de {{itinerarie.school_subject}}
+            </h2>
+            <form action="{% url 'educamy:delete_micro_plan' itinerarie.pk %}" class="bg-red-900 rounded-md text-white" method="POST">
+              {% csrf_token %}
+              
+              <button class="btn btn-danger">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+
+              </button>
+
+            </form>
           </div>
           <div class="flex opacity-75 gap-4">
             <div class="flex gap-2 items-center">
@@ -67,7 +74,7 @@
                   {% for objetive in objetives  %}
                     <li class="flex gap-4 items-center justify-between">
                       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-library-icon lucide-library"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
-                      <p class="text-xs">
+                      <p class="text-xs"> 
                         {{objetive}}
                       </p>
 
@@ -126,7 +133,7 @@
     </div>
 
 
-    <div>
+    <div class="mt-8">
       <h4 class="text-xl font-bold">Itinerarios Anuales</h4>
     </div>
     <div class="grid mt-2 lg:grid-cols-2 gap-4">
@@ -139,12 +146,18 @@
         <div class="space-y-2 border-1 h-fit border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
           <div class="flex justify-between w-full items-center">
             <h2 class="font-bold text-md tracking-tight">Itinerario de {{itinerarie.school_subject}}</h2>
-            <a href="#" class="bg-red-900 rounded-md text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
-            </a>
+            <form action="{% url 'educamy:delete_annual_plan' itinerarie.pk %}" class="bg-red-900 rounded-md text-white" method="POST">
+              {% csrf_token %}
+              
+              <button class="btn btn-danger">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+
+              </button>
+
+            </form>
           </div>
           <div class="flex opacity-75 gap-4">
             <div class="flex gap-2 items-center">

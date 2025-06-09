@@ -109,7 +109,7 @@ BASE_INPUT_CLASS = 'appearance-none w-full p-2 border border-gray-300 rounded-md
 ITINERARY_CHOICES = [
         ('micro', 'Plan Microcurricular'),
         ('annual', 'Plan Anual'),
-        ('quiz', 'Plan de Evaluación [Preguntas]'),
+        # ('quiz', 'Plan de Evaluación [Preguntas]'),
     ]
 
 class itinerarieForm(forms.Form):

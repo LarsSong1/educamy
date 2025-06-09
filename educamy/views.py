@@ -127,6 +127,22 @@ class ItinerariesView(View):
                 'itinerariesCount': itinerariesCount,
         }
         return render(request, 'itineraries.html', context)
+    
+
+class AnnualPlanDeleteView(View):
+    def post(self, request, pk):
+        annualItineraries = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
+        annualItineraries.delete()
+        messages.success(request, 'Plan anual eliminado correctamente.')
+        return redirect('educamy:itineraries')
+        
+
+class MicroPlanDeleteView(View):
+    def post(self, request, pk):
+        microItineraries = get_object_or_404(MicroPlan, pk=pk, generatedContentId__user=request.user)
+        microItineraries.delete()
+        messages.success(request, 'Plan microcurricular eliminado correctamente.')
+        return redirect('educamy:itineraries')
 
 
 class SchoolSubjectsView(View):
