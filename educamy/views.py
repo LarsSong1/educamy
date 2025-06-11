@@ -196,6 +196,17 @@ class SchoolSubjectDeleteView(View):
         return redirect('educamy:school_subjects')
 
 
+
+
+class AnnualItinerarieDetailView(View):
+    def get(self, request, pk):
+        annualItinerarie = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
+        context = {
+             'annualItinerarie': annualItinerarie
+        }
+        return render(request, 'annualItinerarieDetail.html', context)
+
+
 def extractTObjetivePerUnit(html_string):
     soup = BeautifulSoup(html_string, 'html.parser')
     unidades = []
@@ -532,32 +543,34 @@ def generarPlanMicrocurricular(start_date, end_date, units_number, level, school
 
 def generarPlanAnual(start_date, end_date, units_number, level, school_subject, chat, user):
     prompt = f"""
-Eres un asistente educativo profesional. Genera la planificación anual de {units_number} unidades para la materia "{school_subject.name}", nivel "{level}", usando **exactamente** este formato (sin añadir nada más):
+                Eres un asistente educativo profesional. Genera la planificación completa curricular anual de {units_number} unidades para la materia "{school_subject.name}", 
+                Define los objetivos de aprendizaje para una lección sobre la resolución la materia {school_subject}
+                nivel "{level}", usando **exactamente** este formato (sin añadir nada más) y priorizando añadir minimo 7 items por literal:
 
-Unidad 1:
-Título: {{Título sugerido}}
-Objetivos específicos:
-- Objetivo 1
-- Objetivo 2
-Contenidos:
-- Contenido 1
-- Contenido 2
-- Contenido 3
-Orientaciones metodológicas:
-- Metodología 1
-- Metodología 2
-Criterios de evaluación:
-- Criterio 1
-- Criterio 2
-Duracion en semanas: {{Duración en semanas sugerida}}
-- Indicador 1
-- Indicador 2
+                Unidad 1:
+                Título: {{Título sugerido}}
+                Objetivos específicos:
+                - Objetivo 1
+                - Objetivo 2
+                Contenidos:
+                - Contenido 1
+                - Contenido 2
+                - Contenido 3
+                Orientaciones metodológicas:
+                - Metodología 1
+                - Metodología 2
+                Criterios de evaluación:
+                - Criterio 1
+                - Criterio 2
+                Duracion Unidad {{Duración en semanas sugerida en base a la fecha inicio y fin establecida}} 
+                - Duracion
+           
 
-Repite para Unidad 2, Unidad 3, …, Unidad {units_number}.
-Detalles:
-- Fecha de inicio: {start_date}
-- Fecha de fin:    {end_date}
-"""
+                Repite para Unidad 2, Unidad 3, …, Unidad {units_number}.
+                Detalles:
+                - Fecha de inicio: {start_date}
+                - Fecha de fin:    {end_date}
+            """
     # 1) Llamada a Gemini
     try:
         resp = chat.send_message(prompt)
@@ -572,14 +585,29 @@ Detalles:
         print("Sigue sin parsear unidades:", generated_schema)
         return
 
+    styleForHtml = """
+        <style>
+            h1 {
+                font-size: 30px;
+                color: 
+            }
+        </style>
+
+    """
+
     # 3) Generar PDF completo
     html_string = f"""
-    <html><body>
-      <h1>Plan Anual: {school_subject.name}</h1>
-      <p>Nivel: {level}</p>
-      <p>Desde {start_date} hasta {end_date}</p>
-      {format_units_to_boxes(generated_schema)}
-    </body></html>
+                    <html>
+                        <head>
+                            {styleForHtml}
+                        </head>
+                        <body>
+                            <h1>Plan Anual: {school_subject.name}</h1>
+                            <p>Nivel: {level}</p>
+                            <p>Desde {start_date} hasta {end_date}</p>
+                            {format_units_to_boxes(generated_schema)}
+                        </body>
+                    </html>
     """
 
 
