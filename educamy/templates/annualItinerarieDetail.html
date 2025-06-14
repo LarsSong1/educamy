@@ -2,10 +2,10 @@
 
 
 {% block dashboardContent %}
-<section class="max-w-6xl ">
+<section class="max-w-6xl space-y-4">
     {% include "components/btnBack.html" %}
     {% if annualItinerarie %}
-        <div class="bg-white w-full p-4 rounded-md mt-4">
+    <div class="bg-white w-full p-4 rounded-md p-4 border-1 border-gray-300 rounded-md">
         <div class="flex justify-between items-center">
             <h2 class="text-xl font-bold">Itinerario de {{annualItinerarie.school_subject}}</h2>
             <form class="" action="{% url 'educamy:delete_annual_plan' annualItinerarie.pk %}" method="POST">
@@ -39,7 +39,7 @@
         </ul>
 
 
-        <div class="mt-2">
+        {% comment %} <div class="mt-2">
             <h3 class="font-bold">Metodologias</h3>
             {% for goals in annualItinerarie.methodologies %}
             <ul class="grid grid-cols-2">
@@ -47,12 +47,49 @@
                     <li>* {{goal}}</li>
                 {% endfor %}
             </ul>
-                    
             {% endfor %}
-        </div>
+        </div> {% endcomment %}
+       
+
 
     </div>
-    
+
+    <div class=" border-1 border-gray-300 rounded-md">
+        <div class="flex flex-wrap justify-between items-center">
+                {% for itinerarie in annualItinerarie.unit_title %}
+                <div class="border-gray-300 cursor-pointer my-2 h-full py-2 border-l-1 border-r-1 flex-grow">
+                    <h4 class="text-sm text-center">Unidad {{forloop.counter}}: {{itinerarie}}</h4>
+                </div>
+                {% endfor %}
+        </div>
+    </div>
+    <div class="border-1 border-gray-300 rounded-md p-4 space-y-2">
+        <div class="flex gap-4">
+            <p class="rounded-md bg-gray-100 p-2 text-sm bg-green-600 text-center w-[90px]">
+                Unidad 1
+            </p>
+            <h4 class="font-bold text-xl">El mundo que me rodea</h4>
+        </div>
+        <p class="opacity-75">Duración {{duration}}</p>
+    </div>
+
+    <div class="border-1 border-gray-300 rounded-md p-4 space-y-2">
+            <di class="flex gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="orange" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-goal-icon lucide-goal"><path d="M12 13V2l8 4-8 4"/><path d="M20.561 10.222a9 9 0 1 1-12.55-5.29"/><path d="M8.002 9.997a5 5 0 1 0 8.9 2.02"/></svg>
+                <h3 class="font-bold">Metodologias</h3>
+            </di>
+            {% for goals in annualItinerarie.methodologies|slice:': 1' %}
+            <ul class="grid grid-cols-2">
+                {% for goal in goals  %}
+                    <li class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="orange" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dot-icon lucide-dot"><circle cx="12.1" cy="12.1" r="1"/></svg>
+                        <p>{{goal}}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+            {% endfor %}
+    </div>
+        
     {% endif %}
 
 </section>

@@ -85,7 +85,6 @@ def logoutApp(request):
 class DashboardView(View):
     def get(self, request, *args, **kwargs):
 
-
         if request.user.is_superuser:
             users = User.objects.all()
             print("users", users)
@@ -201,8 +200,10 @@ class SchoolSubjectDeleteView(View):
 class AnnualItinerarieDetailView(View):
     def get(self, request, pk):
         annualItinerarie = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
+        duration = (annualItinerarie.end_date - annualItinerarie.start_date).days
         context = {
-             'annualItinerarie': annualItinerarie
+             'annualItinerarie': annualItinerarie,
+             'duration': duration,
         }
         return render(request, 'annualItinerarieDetail.html', context)
 
@@ -631,7 +632,7 @@ def generarPlanAnual(start_date, end_date, units_number, level, school_subject, 
     plan = AnualPlan.objects.create(
         generatedContentId    = gen,
         school_subject        = school_subject,
-        unit_title            = f"Plan Anual ({units_number} unidades)",
+        unit_title            = titles,
         goals       = objectives,
         grade = level,
         start_date = start_date,

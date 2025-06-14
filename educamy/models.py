@@ -39,7 +39,7 @@ class GeneratedContent(models.Model):
 class AnualPlan(models.Model):
     generatedContentId = models.ForeignKey(GeneratedContent, on_delete=models.CASCADE, related_name='generated_annualplans', null=True, blank=True)
     school_subject = models.ForeignKey(SchoolSubject, on_delete=models.CASCADE, null=True, blank=True)
-    unit_title = models.CharField(max_length=255)
+    unit_title = models.JSONField(default=list)
     goals = models.JSONField(default=list)
     unit_contents = models.JSONField(default=list)
     methodologies = models.JSONField(default=list)
