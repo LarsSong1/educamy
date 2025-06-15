@@ -201,9 +201,13 @@ class AnnualItinerarieDetailView(View):
     def get(self, request, pk):
         annualItinerarie = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
         duration = (annualItinerarie.end_date - annualItinerarie.start_date).days
+        counter = len(annualItinerarie.unit_title)
         context = {
              'annualItinerarie': annualItinerarie,
              'duration': duration,
+             'counter': counter,
+             
+            
         }
         return render(request, 'annualItinerarieDetail.html', context)
 
@@ -563,6 +567,9 @@ def generarPlanAnual(start_date, end_date, units_number, level, school_subject, 
                 Criterios de evaluación:
                 - Criterio 1
                 - Criterio 2
+                Indicadores de evaluación:
+                - Indicador 1
+                - Indicador 2
                 Duracion Unidad {{Duración en semanas sugerida en base a la fecha inicio y fin establecida}} 
                 - Duracion
            
