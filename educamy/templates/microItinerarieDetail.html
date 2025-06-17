@@ -1,58 +1,45 @@
 {% extends "layout.html" %}
 
-
 {% block dashboardContent %}
 <section class="max-w-6xl space-y-4">
     {% include "components/btnBack.html" %}
-    {% if annualItinerarie %}
+    {% if microItinerarie %}
         <div class="bg-white w-full p-4 border-1 border-gray-300 rounded-md">
             <div class="flex justify-between items-center">
-                <h2 class="text-xl font-bold">Itinerario de {{annualItinerarie.school_subject}}</h2>
-                <form class="" action="{% url 'educamy:delete_annual_plan' annualItinerarie.pk %}" method="POST">
+                <h2 class="text-xl font-bold">Itinerario de {{ microItinerarie.school_subject }}</h2>
+                <form action="{% url 'educamy:delete_micro_plan' microItinerarie.pk %}" method="POST">
                     {% csrf_token %}
                     <button class="flex items-center px-2 bg-red-700 rounded-md text-white py-2 gap-2">
                         <p>Eliminar</p>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-
                     </button>
                 </form>
             </div>
             <ul class="mt-2 flex gap-4">
                 <li class="opacity-75 flex gap-2 items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open-icon lucide-book-open"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
-                    <p class="text-xs opacity-75">
-                        {{annualItinerarie.school_subject}}
-                    </p>
+                    <p class="text-xs opacity-75">{{ microItinerarie.school_subject }}</p>
                 </li>
                 <li class="opacity-75 flex gap-2 items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap-icon lucide-graduation-cap"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
-                    <p class="text-xs">
-                        {{annualItinerarie.grade}}
-                    </p>
+                    <p class="text-xs">{{ microItinerarie.grade }}</p>
                 </li>
                 <li class="opacity-75 flex gap-2 items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-icon lucide-calendar"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
-                    <p class="text-xs ">
-                        {{annualItinerarie.start_date}} - {{annualItinerarie.end_date}}
-                    </p>
+                    <p class="text-xs">{{ microItinerarie.start_date }} - {{ microItinerarie.end_date }}</p>
                 </li>
             </ul>
-
         </div>
 
         <div class=" border-1 border-gray-300 bg-white rounded-md">
             <div class="flex flex-wrap justify-between items-center">
-                    {% for unity in annualItinerarie.unit_title %}
+                    {% for unity in microItinerarie.unit_title %}
                     <button class="border-gray-300 cursor-pointer my-2 h-full py-2 border-l-1 border-r-1 flex-grow unit-btn" data-unit="{{ forloop.counter }}">
                         <h4 class="text-sm text-center">Unidad {{forloop.counter}}: {{unity}}</h4>
                     </button>
                     {% endfor %}
             </div>
         </div>
-
-
-       
-
 
         <div class="bg-white border-1 border-gray-300 rounded-md p-4 space-y-2" id="unit-details">
             <div class="flex gap-4">
@@ -64,74 +51,52 @@
             <p class="opacity-75 text-sm">Duración: {{duration}} días</p>
         </div>
 
-
         <div class="border-1 border-gray-300 rounded-md p-4 space-y-2 bg-white">
             <div class="flex gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="purple" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook-pen-icon lucide-notebook-pen"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg>
                 <h3 class="font-bold">Contenido</h3>
             </div>
 
-            <div>
-                <ul id="unitContents-list" class=""> 
-                
-                </ul>
-            </div>
+            <ul id="unitContents-list" class="grid lg:grid-cols-2 grid-cols-1">
+                <!-- Los contenidos aparecerán aquí -->
+            </ul>
         </div>
 
-
-        <div class="border-1 border-gray-300 rounded-md p-4 space-y-2 bg-white">
-                <div class="flex gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="orange" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lightbulb-icon lucide-lightbulb"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                    <h3 class="font-bold">Metodologias</h3>
-                </div>
-
-                <div>
-                    <ul id="methodologies-list" class="grid lg:grid-cols-2 grid-cols-1">
-                    <!-- Metodologias aqui  -->
-                    </ul>
-
-                </div>
-        </div>
-
+        
 
         <div class="border-1 border-gray-300 rounded-md p-4 space-y-2 bg-white">
             <div class="flex gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="green" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open-check-icon lucide-book-open-check"><path d="M12 21V7"/><path d="m16 12 2 2 4-4"/><path d="M22 6V4a1 1 0 0 0-1-1h-5a4 4 0 0 0-4 4 4 4 0 0 0-4-4H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h6a3 3 0 0 1 3 3 3 3 0 0 1 3-3h6a1 1 0 0 0 1-1v-1.3"/></svg>
-                <h3 class="font-bold">Criterios de Evaluacion</h3>
+                <h3 class="font-bold">Criterios de Evaluación</h3>
             </div>
-            <div>
-                <ul id='evalCriteria-list' class="grid lg:grid-cols-2 grid-cols-1">
-                     <!-- Criterios de Evaluacion aqui  -->
-                </ul>
-            </div>
+            <ul id="evalCriteria-list" class="grid lg:grid-cols-2 grid-cols-1">
+                <!-- Los criterios de evaluación aparecerán aquí -->
+            </ul>
         </div>
-
 
         <div class="border-1 border-gray-300 rounded-md p-4 space-y-2 bg-white">
             <div class="flex gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="purple" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook-pen-icon lucide-notebook-pen"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg>
                 <h3 class="font-bold">Indicadores de Evaluación</h3>
             </div>
-            <div>
-                <ul id='evalIndicators-list' class="grid lg:grid-cols-2 grid-cols-1">
-
-                </ul>
-            </div>
+            <ul id="evalIndicators-list" class="grid lg:grid-cols-2 grid-cols-1">
+                <!-- Los indicadores de evaluación aparecerán aquí -->
+            </ul>
         </div>
-        
     {% endif %}
-
 </section>
+
+
 
 <script>
     
-    const units = {{ annualItinerarie.unit_title|safe }};
-    console.log(units)
-    const methods = {{ annualItinerarie.methodologies|safe }};
-    const evalCriteria = {{annualItinerarie.evaluation_criteria|safe}};
-    const evalIndicator = {{annualItinerarie.evaluation_indicators|safe}};
-    console.log(evalIndicator)
-    const contents = {{ annualItinerarie.unit_contents|safe }};
+    const units = {{ microItinerarie.unit_title|safe }}; 
+    console.log(units);
+
+    const evalCriteria = {{ microItinerarie.evaluation_criteria|safe }}; 
+    const evalIndicator = {{ microItinerarie.evaluation_indicators|safe }}; 
+    console.log(evalCriteria)
+    const contents = {{ microItinerarie.topic|safe }}; 
 
     // Mostrar los detalles de la unidad seleccionada
     document.querySelectorAll('.unit-btn').forEach(button => {
@@ -142,20 +107,29 @@
             const unitTitle = units[unitNumber - 1]; // Para obtener la unidad correcta, dado que el índice en JavaScript comienza en 0.
             document.getElementById('unit-title').textContent = `Unidad ${unitNumber}: ${unitTitle}`;
 
-            // Mostrar las metodologías correspondientes a la unidad
-            const unitMethods = methods[unitNumber - 1];
-            const methodsList = document.getElementById('methodologies-list');
-            methodsList.innerHTML = ''; // Limpiar cualquier contenido previo
+            // Mostrar los contenidos correspondientes a la unidad
+            const unitContents = contents[unitNumber - 1];
+            const contentsList = document.getElementById('unitContents-list');
+            contentsList.innerHTML = ''; // Limpiar cualquier contenido previo
 
-            unitMethods.forEach(item => {
+            unitContents.forEach(item => {
                 const li = document.createElement('li');
-                li.className = 'flex gap-1 items-center';
-                const dotSVG = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="orange" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dot-icon lucide-dot"><circle cx="12.1" cy="12.1" r="1"/></svg>
+                li.className = 'flex space-y-4 items-center'; // Mantén tus clases de Tailwind
+                const contentSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="purple" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dot-icon lucide-dot"><circle cx="12.1" cy="12.1" r="1"/></svg>`;
+
+                // Si también quieres el botón "Generar Diapositiva" por cada contenido, lo agregamos aquí
+                const contentHTML = `
+                    ${contentSVG}
+                    <p class="text-sm w-[75%]">${item}</p>
+                    <a class="px-4 bg-green-700 text-white rounded-md text-xs flex items-center w-[200px] gap-2" href="">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-input-icon lucide-file-input"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
+                        Generar Diapositiva
+                    </a>
                 `;
-                li.innerHTML = dotSVG + item;
-                methodsList.appendChild(li);
+                li.innerHTML = contentHTML;
+                contentsList.appendChild(li);
             });
+
 
             // Mostrar los criterios de evaluación correspondientes a la unidad
             const unitEvalCriteria = evalCriteria[unitNumber - 1];
@@ -172,6 +146,7 @@
                 evalCriteriaList.appendChild(li);
             });
 
+
             // Mostrar los indicadores de evaluación correspondientes a la unidad
             const unitIndicator = evalIndicator[unitNumber - 1];
             const evalIndicatorList = document.getElementById('evalIndicators-list'); // FIXED: 'evalIndicators-list' (correct ID from HTML)
@@ -185,44 +160,12 @@
                 evalIndicatorList.appendChild(li);
             });
 
-
-
-
-            const unitContents = contents[unitNumber - 1]; // Obtener los contenidos para la unidad actual
-            const contentsList = document.getElementById('unitContents-list'); // Obtener el UL
-            contentsList.innerHTML = ''; // Limpiar cualquier contenido previo
-
-            unitContents.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'flex space-y-4 items-center'; // Mantén tus clases de Tailwind
-                const contentSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="purple" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dot-icon lucide-dot"><circle cx="12.1" cy="12.1" r="1"/></svg>`;
-                
-                // Si también quieres el botón "Generar Diapositiva" por cada contenido, lo agregamos aquí
-                const contentHTML = `
-                    ${contentSVG}
-                    <p class="text-sm w-[75%]">${item}</p>
-                    <a class="px-4 bg-green-700 text-white rounded-md text-xs flex items-center w-[200px] gap-2" href="">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-input-icon lucide-file-input"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
-                        Generar Diapositiva
-                    </a>
-                `;
-                li.innerHTML = contentHTML;
-                contentsList.appendChild(li);
-            });
-
-            // Mostrar los detalles dinámicos por unidad (if it starts hidden)
+            // Mostrar los detalles dinámicos por unidad (si comienza oculto)
             document.getElementById('unit-details').classList.remove('hidden');
-
-
-
-
-
-
         });
     });
 
-
-
+    // Hacer clic en el primer botón de unidad al cargar la página
     document.addEventListener('DOMContentLoaded', () => {
         const firstUnitButton = document.querySelector('.unit-btn');
         if (firstUnitButton) {
@@ -230,5 +173,6 @@
         }
     });
 </script>
+
 
 {% endblock dashboardContent %}

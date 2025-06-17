@@ -86,14 +86,14 @@
 
 
 
-<section>
+<section class="mt-4">
     <div class="flex justify-between items-center">
         <h2 class="text-xl font-bold ">Mis Itinerarios</h2>
         <div class="flex gap-4 items-center">
             
-            {% comment %} <a class="text-xs opacity-75" href="{% url 'educamy:itineraries' %}">
+            <a class="text-xs opacity-75" href="{% url 'educamy:itineraries' %}">
                 Ver Todos
-            </a> {% endcomment %}
+            </a> 
         </div>
     </div>
 
@@ -111,21 +111,20 @@
 
     <div id="microItineraries">
         <h3 class="text-sm opacity-75 mb-4">Registros de itinerarios Microcurriculares generados</h3>
-        <div class="grid lg:grid-cols-3 gap-4 grid-cols-1 mt-2" >
-            
+        <div class="grid lg:grid-cols-3 gap-4 grid-cols-1 mt-2" >     
             {% for itinerarie in microItineraries %}
-
             <div
-                class="border-1 border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
+                class="border-1  border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full h-fit">
                 <div class="flex flex-col justify-center w-full">
                     <div class="flex justify-between items-center w-full mb-2">
                         <h3 class="text-md font-bold">Itinerario de {{itinerarie.school_subject}}</h3>
-                        <a href="{{itinerarie.pdf_file.url}}"
+                        
+                        <a  href="{{itinerarie.pdf_file.url}}"
                             download="{{itinerarie.school_subject}}_itinerario.pdf"
-                            
                             class="cursor-pointer">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="orange" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-down-icon lucide-file-down"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
                         </a>
+                        
                     </div>
                     <div class="flex gap-2 items-center opacity-75">
                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="24" viewBox="0 0 24 24" fill="none"
@@ -159,17 +158,12 @@
                             {% endfor %}
                         {% endfor %}
                     </div>
-                    {% comment %} <a class="w-full text-sm text-center mt-2 bg-green-600 py-1 rounded-md" href="{% url "
-                        educamy:itineraries" %}">Ver Detalles
-                    </a> {% endcomment %}
+                    <a class="w-full text-sm text-center mt-2 bg-green-600 py-1 rounded-md" 
+                    href="{% url "educamy:detail_micro_plan" itinerarie.pk %}">Ver Detalles
+                    </a>
                 </div>
             </div>
             {% endfor %}
-
-
-
-
-
         </div>
     </div>
 
@@ -223,9 +217,9 @@
                             {% endfor %}
                         {% endfor %}
                     </div>
-                    {% comment %} <a class="w-full text-sm text-center mt-2 bg-green-600 py-1 rounded-md" href="{% url "
-                        educamy:itineraries" %}">Ver Detalles
-                    </a> {% endcomment %}
+                    <a class="w-full text-sm text-center mt-2 bg-green-600 py-1 rounded-md" 
+                    href="{% url "educamy:detail_annual_plan" itinerarie.pk %}">Ver Detalles
+                    </a>
                 </div>
             </div>
             {% endfor %}

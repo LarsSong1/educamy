@@ -100,7 +100,7 @@
   
         <!-- Sub Navigation -->
         <div class="w-full flex-none space-y-3 p-4">
-          <a
+          {% comment %} <a
             href="javascript:void(0)"
             class="flex items-center gap-3 rounded-lg px-4 py-2.5 font-semibold text-slate-600 hover:bg-white hover:shadow-xs hover:shadow-slate-300/50 active:bg-white/75 active:text-slate-800 active:shadow-slate-300/10"
           >
@@ -115,7 +115,7 @@
               />
             </svg>
             <span>Cuenta</span>
-          </a> 
+          </a>  {% endcomment %}
           <a
             href="{% url 'educamy:logout' %}"
             class="flex items-center gap-3 rounded-lg px-4 py-2.5 font-semibold text-black hover:bg-white hover:shadow-xs hover:shadow-slate-300/50 active:bg-white/75 active:text-slate-800 active:shadow-slate-300/10"

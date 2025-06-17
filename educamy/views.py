@@ -117,7 +117,8 @@ class ItinerariesView(View):
         itinerariesCount += microItineraries.count()
      
 
-        print(microItineraries)
+        for micro in microItineraries:
+            print("temas", micro.topic)
      
         context = {
                 'user': request.user,
@@ -202,6 +203,7 @@ class AnnualItinerarieDetailView(View):
         annualItinerarie = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
         duration = (annualItinerarie.end_date - annualItinerarie.start_date).days
         counter = len(annualItinerarie.unit_title)
+        print(counter)
         context = {
              'annualItinerarie': annualItinerarie,
              'duration': duration,
@@ -212,81 +214,173 @@ class AnnualItinerarieDetailView(View):
         return render(request, 'annualItinerarieDetail.html', context)
 
 
+class MicroItinerarieDetailView(View):
+    def get(self, request, pk):
+        microItinerarie = get_object_or_404(MicroPlan, pk=pk, generatedContentId__user=request.user)
+        duration = (microItinerarie.end_date - microItinerarie.start_date).days
+        counter = len(microItinerarie.unit_title)
+        print(counter, "counter")
+        
+        context = {
+            'microItinerarie': microItinerarie,
+            'duration': duration,
+            'counter': counter,
+        }
+        
+        return render(request, 'microItinerarieDetail.html', context)
+
+
+
+# def extractTObjetivePerUnit(html_string):
+#     soup = BeautifulSoup(html_string, 'html.parser')
+#     unidades = []
+
+#     tablas = soup.find_all('table')
+
+#     for tabla in tablas:
+#         contenido = []
+#         filas = tabla.find_all('tr')
+
+#         for fila in filas:
+#             celdas = fila.find_all('td')
+#             if len(celdas) >= 2:
+#                 titulo = celdas[0].get_text(strip=True).lower()
+#                 if "objetivos" in titulo:
+#                     contenido_html = celdas[1]
+#                     items = contenido_html.find_all('li')
+#                     if items:
+#                         contenido = [li.get_text(strip=True) for li in items]
+#                     else:
+#                         texto = contenido_html.get_text(separator='\n').strip()
+#                         contenido = [line.strip() for line in texto.split('\n') if line.strip()]
+#                     break
+
+#         unidades.append(contenido)
+
+#     return unidades
+
+
+
+# def extractTopicContentPerUnit(html_string):
+#     soup = BeautifulSoup(html_string, 'html.parser')
+#     unidades = []
+
+#     # Cada tabla representa una unidad
+#     tablas = soup.find_all('table')
+
+#     for tabla in tablas:
+#         contenido = []
+#         filas = tabla.find_all('tr')
+
+#         for fila in filas:
+#             celdas = fila.find_all('td')
+#             if len(celdas) >= 2:
+#                 titulo = celdas[0].get_text(strip=True)
+#                 if titulo.lower() == 'contenidos':
+#                     # Aquí extraemos el contenido, puede estar en <ul><li> o en texto plano separado
+#                     contenido_html = celdas[1]
+#                     # Si hay <li>, extraemos cada ítem
+#                     items = contenido_html.find_all('li')
+#                     if items:
+#                         contenido = [li.get_text(strip=True) for li in items]
+#                     else:
+#                         # Si no hay <li>, extraemos texto dividido por saltos de línea o puntos
+#                         texto = contenido_html.get_text(separator='\n').strip()
+#                         contenido = [line.strip() for line in texto.split('\n') if line.strip()]
+#                     break  # Ya encontramos contenidos en esta tabla, pasamos a la siguiente
+
+#         unidades.append(contenido)
+
+#     return unidades
+
+
+
+
+
 def extractTObjetivePerUnit(html_string):
+    """
+    Extrae, por cada tabla (unidad), la lista de 'Objetivos específicos' 
+    buscando el encabezado en la segunda fila y el contenido en la tercera.
+    Devuelve una lista de listas (una por unidad).
+    """
     soup = BeautifulSoup(html_string, 'html.parser')
-    unidades = []
+    resultados = []
 
-    tablas = soup.find_all('table')
+    for table in soup.find_all('table'):
+        rows = table.find_all('tr')
+        # Necesitamos al menos 3 filas: título, encabezados y datos
+        if len(rows) < 3:
+            continue
 
-    for tabla in tablas:
-        contenido = []
-        filas = tabla.find_all('tr')
+        # Segunda fila: encabezados
+        header_cells = rows[1].find_all(['th','td'])
+        # Tercera fila: contenidos
+        data_cells   = rows[2].find_all('td')
 
-        for fila in filas:
-            celdas = fila.find_all('td')
-            if len(celdas) >= 2:
-                titulo = celdas[0].get_text(strip=True).lower()
-                if "objetivos" in titulo:
-                    contenido_html = celdas[1]
-                    items = contenido_html.find_all('li')
-                    if items:
-                        contenido = [li.get_text(strip=True) for li in items]
-                    else:
-                        texto = contenido_html.get_text(separator='\n').strip()
-                        contenido = [line.strip() for line in texto.split('\n') if line.strip()]
-                    break
+        # Buscar la columna cuyos encabezados incluyen "objetivos"
+        for idx, th in enumerate(header_cells):
+            if 'objetivos' in th.get_text(strip=True).lower():
+                cell = data_cells[idx]
+                items = cell.find_all('li')
+                if items:
+                    resultados.append([li.get_text(strip=True) for li in items])
+                else:
+                    # Texto plano separado por líneas
+                    texto = cell.get_text(separator='\n').strip()
+                    resultados.append([l for l in (line.strip() for line in texto.split('\n')) if l])
+                break  # pasamos a la siguiente tabla
 
-        unidades.append(contenido)
-
-    return unidades
-
+    return resultados
 
 
 def extractTopicContentPerUnit(html_string):
+    """
+    Extrae, por cada tabla (unidad), la lista de 'Contenidos' 
+    buscando el encabezado en la segunda fila y el contenido en la tercera.
+    Devuelve una lista de listas (una por unidad).
+    """
     soup = BeautifulSoup(html_string, 'html.parser')
-    unidades = []
+    resultados = []
 
-    # Cada tabla representa una unidad
-    tablas = soup.find_all('table')
+    for table in soup.find_all('table'):
+        rows = table.find_all('tr')
+        if len(rows) < 3:
+            continue
 
-    for tabla in tablas:
-        contenido = []
-        filas = tabla.find_all('tr')
+        header_cells = rows[1].find_all(['th','td'])
+        data_cells   = rows[2].find_all('td')
 
-        for fila in filas:
-            celdas = fila.find_all('td')
-            if len(celdas) >= 2:
-                titulo = celdas[0].get_text(strip=True)
-                if titulo.lower() == 'contenidos':
-                    # Aquí extraemos el contenido, puede estar en <ul><li> o en texto plano separado
-                    contenido_html = celdas[1]
-                    # Si hay <li>, extraemos cada ítem
-                    items = contenido_html.find_all('li')
-                    if items:
-                        contenido = [li.get_text(strip=True) for li in items]
-                    else:
-                        # Si no hay <li>, extraemos texto dividido por saltos de línea o puntos
-                        texto = contenido_html.get_text(separator='\n').strip()
-                        contenido = [line.strip() for line in texto.split('\n') if line.strip()]
-                    break  # Ya encontramos contenidos en esta tabla, pasamos a la siguiente
+        for idx, th in enumerate(header_cells):
+            if 'contenidos' in th.get_text(strip=True).lower():
+                cell = data_cells[idx]
+                items = cell.find_all('li')
+                if items:
+                    resultados.append([li.get_text(strip=True) for li in items])
+                else:
+                    texto = cell.get_text(separator='\n').strip()
+                    resultados.append([l for l in (line.strip() for line in texto.split('\n')) if l])
+                break
 
-        unidades.append(contenido)
+    return resultados
 
-    return unidades
+
+
 
 
 def parse_gemini_response_to_units(text):
     unidades = []
-    bloque = {}
+    bloque = {'titulo': '', 'objetivos': [], 'contenidos': [], 'metodologias': [], 'criterios': [], 'indicadores': []}
     current_key = None
 
     for line in text.splitlines():
         line = line.strip()
 
         if line.startswith("Unidad"):
-            if bloque:
+            # Antes de agregar el bloque, verificar si alguna clave contiene datos
+            if any(bloque[key] for key in bloque):  # Verificamos si el bloque tiene contenido antes de añadirlo
                 unidades.append(bloque)
-            bloque = {'titulo': line, 'objetivos': [], 'contenidos': [], 'metodologias': [], 'criterios': [], 'indicadores': []}
+            # Reiniciamos el bloque para la siguiente unidad
+            bloque = {'titulo': '', 'objetivos': [], 'contenidos': [], 'metodologias': [], 'criterios': [], 'indicadores': []}
             current_key = None
         elif line.startswith("Título:"):
             bloque['titulo'] = line.replace("Título:", "").strip()
@@ -301,49 +395,203 @@ def parse_gemini_response_to_units(text):
         elif "Indicadores de evaluación:" in line:
             current_key = 'indicadores'
         elif line.startswith("- ") and current_key:
-            bloque[current_key].append(line[2:])
+            # Si la línea empieza con un guion, la agregamos a la lista del current_key
+            bloque[current_key].append(line[2:].strip())
         elif not line:
-            current_key = None
+            current_key = None  # Cuando encontramos una línea vacía, limpiamos el current_key
 
-    if bloque:
+    # Añadir el último bloque si contiene datos
+    if any(bloque[key] for key in bloque):
         unidades.append(bloque)
 
     return unidades
+
+
+
+def parse_gemini_response_to_micro_units(text):
+    """
+    Parsea el texto generado por Gemini para crear un listado de unidades microcurriculares,
+    extrayendo títulos, objetivos, contenidos y otros campos relevantes.
+    """
+    unidades = []
+    bloque = {'titulo': '', 'goals': [], 'unit_contents': [], 'criterios': [], 'indicadores': []}
+    current_key = None
+
+    for line in text.splitlines():
+        line = line.strip()
+
+        if line.startswith("Unidad"):
+            # Antes de agregar el bloque, verificar si alguna clave contiene datos
+            if any(bloque[key] for key in bloque):  # Verificamos si el bloque tiene contenido antes de añadirlo
+                unidades.append(bloque)
+            # Reiniciamos el bloque para la siguiente unidad
+            bloque = {'titulo': '', 'goals': [], 'unit_contents': [], 'criterios': [], 'indicadores': []}
+            current_key = None
+        elif line.startswith("Título:"):
+            bloque['titulo'] = line.replace("Título:", "").strip()
+        elif "Objetivos específicos:" in line:
+            current_key = 'goals'
+        elif "Contenidos:" in line:
+            current_key = 'unit_contents'
+        elif "Criterios de evaluación:" in line:
+            current_key = 'criterios'
+        elif "Indicadores de evaluación:" in line:
+            current_key = 'indicadores'
+        elif line.startswith("- ") and current_key:
+            # Si la línea empieza con un guion, la agregamos a la lista del current_key
+            bloque[current_key].append(line[2:].strip())
+        elif not line:
+            current_key = None  # Cuando encontramos una línea vacía, limpiamos el current_key
+
+    # Añadir el último bloque si contiene datos
+    if any(bloque[key] for key in bloque):
+        unidades.append(bloque)
+
+    return unidades
+
+
+
+
+
+def format_micro_units_to_boxes(text):
+    # Usamos el parseador adecuado para MicroPlan
+    unidades = parse_gemini_response_to_micro_units(text)
+    html = ""
+
+    # Definimos los títulos de las columnas y las claves correspondientes
+    sections = [
+        ("Objetivos específicos", "goals"),
+        ("Contenidos", "unit_contents"),
+        ("Criterios de evaluación", "criterios"),
+        ("Indicadores de evaluación", "indicadores"),
+    ]
+    n_cols = len(sections)
+
+    for index, unidad in enumerate(unidades, start=1):
+        # 1) Título que ocupa TODO el ancho
+        html += f"""
+        <table style="
+            width: 100%;
+            border: 1px solid #000;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        ">
+          <tr>
+            <th colspan="{n_cols}" style="
+                padding: 10px;
+                font-size: 16px;
+                text-align: left;
+                border: 1px solid #000;
+            ">
+              Unidad {index}: {unidad['titulo']}
+            </th>
+          </tr>
+          
+          <!-- 2) Fila de encabezados de sección -->
+          <tr>
+        """
+        
+        for title, _key in sections:
+            html += f"""
+            <th style="
+                padding: 8px;
+                text-align: left;
+                border: 1px solid #000;
+            ">{title}</th>
+            """
+        html += "</tr>"
+
+        # 3) Fila con los contenidos de cada sección
+        html += "<tr>"
+        for _title, key in sections:
+            items = unidad.get(key, [])
+            html += f"""
+            <td style="
+                padding: 8px;
+                vertical-align: top;
+                border: 1px solid #000;
+            ">
+              <ul style="margin:0; padding-left:20px; list-style: disc inside;">
+                {''.join(f'<li style="margin-bottom:6px;">{item}</li>' for item in items)}
+              </ul>
+            </td>
+            """
+        html += "</tr>"
+
+        html += "</table>"
+
+    return html
+
+
 
 
 def format_units_to_boxes(text):
     unidades = parse_gemini_response_to_units(text)
     html = ""
 
+    # Definimos los títulos de las columnas y la clave en el dict
+    sections = [
+        ("Objetivos específicos", "objetivos"),
+        ("Contenidos",              "contenidos"),
+        ("Orientaciones metodológicas", "metodologias"),
+        ("Criterios de evaluación", "criterios"),
+        ("Indicadores de evaluación", "indicadores"),
+    ]
+    n_cols = len(sections)
+
     for index, unidad in enumerate(unidades, start=1):
+        # 1) Título que ocupa TODO el ancho
         html += f"""
-        <table style="width: 100%; border: 2px solid #4a148c; border-collapse: collapse; margin-bottom: 30px; font-family: Arial, sans-serif; font-size: 14px;">
-            <tr>
-                <th colspan="2" style="background-color: #f3e8ff; color: #4a148c; padding: 10px; font-size: 16px; text-align: left;">
-                    Unidad {index}: {unidad['titulo']}
-                </th>
-            </tr>
+        <table style="
+            width: 100%;
+            border: 1px solid #000;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        ">
+          <tr>
+            <th colspan="{n_cols}" style="
+                padding: 10px;
+                font-size: 16px;
+                text-align: left;
+                border: 1px solid #000;
+            ">
+              Unidad {index}: {unidad['titulo']}
+            </th>
+          </tr>
+          
+          <!-- 2) Fila de encabezados de sección -->
+          <tr>
         """
-
-        def fila(titulo, items):
-            if not items:
-                return ""
-            return f"""
-            <tr>
-                <td style="width: 30%; font-weight: bold; vertical-align: top; padding: 8px; background-color: #f9f9f9;">{titulo}</td>
-                <td style="padding: 8px;">
-                    <ul style="margin: 0; padding-left: 20px;">
-                        {''.join(f'<li>{item}</li>' for item in items)}
-                    </ul>
-                </td>
-            </tr>
+        for title, _key in sections:
+            html += f"""
+            <th style="
+                padding: 8px;
+                text-align: left;
+                border: 1px solid #000;
+            ">{title}</th>
             """
+        html += "</tr>"
 
-        html += fila("Objetivos específicos", unidad['objetivos'])
-        html += fila("Contenidos", unidad['contenidos'])
-        html += fila("Orientaciones metodológicas", unidad['metodologias'])
-        html += fila("Criterios de evaluación", unidad['criterios'])
-        html += fila("Indicadores de evaluación", unidad['indicadores'])
+        # 3) Fila con los contenidos de cada sección
+        html += "<tr>"
+        for _title, key in sections:
+            items = unidad.get(key, [])
+            html += f"""
+            <td style="
+                padding: 8px;
+                vertical-align: top;
+                border: 1px solid #000;
+            ">
+              <ul style="margin:0; padding-left:20px; list-style: disc inside;">
+                {''.join(f'<li style="margin-bottom:6px;">{item}</li>' for item in items)}
+              </ul>
+            </td>
+            """
+        html += "</tr>"
 
         html += "</table>"
 
@@ -430,51 +678,208 @@ def generateContent(request):
 
 
 
-def generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user):
-    print("API Key configurada correctamente. ", os.getenv('GEMINI_API_KEY'))
+# def generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user):
+#     print("API Key configurada correctamente. ", os.getenv('GEMINI_API_KEY'))
+
+#     prompt = f"""
+#                         Eres un asistente educativo profesional. Genera la planificación completa de {units_number} unidades didácticas para la materia "{school_subject.name}", nivel "{level}" de educación básica.
+
+#                         Para cada unidad proporciona:
+
+#                         - Título de la unidad
+#                         - 2 objetivos específicos
+#                         - 3 contenidos temáticos principales
+#                         - 2 orientaciones metodológicas
+#                         - 2 criterios de evaluación
+#                         - 2 indicadores de evaluación
+
+#                         Formato de salida para cada unidad:
+
+#                         Unidad {units_number}:
+#                         Título: {{Título sugerido}}
+
+#                         Objetivos específicos:
+#                         - Objetivo 1
+#                         - Objetivo 2
+
+#                         Contenidos:
+#                         - Contenido 1
+#                         - Contenido 2
+#                         - Contenido 3
+
+#                         Orientaciones metodológicas:
+#                         - Metodología 1
+#                         - Metodología 2
+
+#                         Criterios de evaluación:
+#                         - Criterio 1
+#                         - Criterio 2
+
+#                         Indicadores de evaluación:
+#                         - Indicador 1
+#                         - Indicador 2
+
+#                         NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en el formato claro y directo.
+#                     """
+
+#     generated_schema = "⚠️ Error al generar contenido."
+
+#     try:
+#         response = chat.send_message(prompt)
+#         generated_schema = response.text
+#     except Exception as e:
+#         print(f"Error generando contenido: {e}")
+
+#             # Crear contenido HTML para el PDF
+#     html_string = f"""
+#                     <html>
+#                     <head>
+#                     <style>
+#                         body {{
+#                         font-family: 'Arial', sans-serif;
+#                         margin: 25px;
+#                         font-size: 12.5px;
+#                         color: #000;
+#                         }}
+#                         h1 {{
+#                         font-size: 16px;
+#                         text-align: center;
+#                         font-weight: bold;
+#                         }}
+#                         .header {{
+#                         text-align: center;
+#                         font-weight: bold;
+#                         font-size: 14px;
+#                         margin-bottom: 10px;
+#                         }}
+#                         table {{
+#                         width: 100%;
+#                         border-collapse: collapse;
+#                         margin-bottom: 20px;
+#                         }}
+#                         th, td {{
+#                         border: 1px solid black;
+#                         padding: 5px;
+#                         text-align: left;
+#                         vertical-align: top;
+#                         }}
+#                         .section-title {{
+#                         background-color: #D9D9D9;
+#                         font-weight: bold;
+#                         text-align: left;
+#                         padding: 6px;
+#                         }}
+#                         .sub-header td {{
+#                         background-color: #f2f2f2;
+#                         font-weight: bold;
+#                         }}
+#                     </style>
+#                     </head>
+#                     <body>
+
+#                     <h1>Plan Microcurricular para {school_subject}</h1>
+#                     <div class="header">PLANIFICACIÓN MICROCURRICULAR DE UNIDAD DIDÁCTICA O PARCIAL</div>
+
+#                     <table>
+#                         <tr class="sub-header">
+#                         <td>Asignatura:</td>
+#                         <td>{school_subject.name}</td>
+#                         </tr>
+#                         <tr>
+#                         <td>N° Unidades: </td>
+#                         <td>{units_number}</td>
+#                         <td>Título:</td>
+#                         <td colspan="3">Planificación Microcurricular Generada</td>
+#                         </tr>
+#                         <tr>
+#                         <td>Curso:</td>
+#                         <td>{level}</td>
+#                         <td>N° Semanas:</td>
+#                         <td>{(end_date - start_date).days // 7}</td>
+#                         <td>Fecha de Inicio:</td>
+#                         <td>{start_date}</td>
+#                         </tr>
+#                         <tr>
+#                         <td>Paralelo:</td>
+#                         <td>A</td>
+#                         <td>Fecha de Finalización:</td>
+#                         <td colspan="3">{end_date}</td>
+#                         </tr>
+#                     </table>
+
+                    
+
+#                     <div class="section-title">1) CONTENIDO CURRICULAR POR UNIDAD</div>
+
+#                     {format_units_to_boxes(generated_schema)}
+
+#                     </body>
+#                     </html>
+#                 """
     
 
-           
+
+#             # Crear PDF
+#     with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as output:
+#         html = HTML(string=html_string)
+#         html.write_pdf(output.name)
+
+
+#     gen = GeneratedContent.objects.create(user=user, school_subject=school_subject)
+
+#     topics = extractTopicContentPerUnit(html_string)
+#     objetives = extractTObjetivePerUnit(html_string)
+#     content = MicroPlan.objects.create(
+#                     generatedContentId = gen,
+#                     school_subject=school_subject,
+#                     start_date=start_date,
+#                     end_date=end_date,
+#                     grade=level,
+#                     topic=topics if isinstance(topics, list) else [],
+#                     goals=objetives if isinstance(objetives, list) else [],
+#                     generated_content=html_string,  
+#                 )
+
+#     with open(output.name, 'rb') as pdf_file:
+#         content.pdf_file.save(f"plan_micro_{content.pk}.pdf", pdf_file)
+
+
+def generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user):
     prompt = f"""
-                        Eres un asistente educativo profesional. Genera la planificación completa de {units_number} unidades didácticas para la materia "{school_subject.name}", nivel "{level}" de educación básica.
+        Eres un asistente educativo profesional. Genera la planificación completa de {units_number} unidades didácticas para la materia "{school_subject.name}", nivel "{level}" de educación básica.
 
-                        Para cada unidad proporciona:
+        Para cada unidad proporciona:
 
-                        - Título de la unidad
-                        - 2 objetivos específicos
-                        - 3 contenidos temáticos principales
-                        - 2 orientaciones metodológicas
-                        - 2 criterios de evaluación
-                        - 2 indicadores de evaluación
+        - Título de la unidad
+        - 2 objetivos específicos
+        - 3 contenidos temáticos principales
+        - 2 criterios de evaluación
+        - 2 indicadores de evaluación
 
-                        Formato de salida para cada unidad:
+        Formato de salida para cada unidad:
 
-                        Unidad {units_number}:
-                        Título: {{Título sugerido}}
+        Unidad {units_number}:
+        Título: {{Título sugerido}}
 
-                        Objetivos específicos:
-                        - Objetivo 1
-                        - Objetivo 2
+        Objetivos específicos:
+        - Objetivo 1
+        - Objetivo 2
 
-                        Contenidos:
-                        - Contenido 1
-                        - Contenido 2
-                        - Contenido 3
+        Contenidos:
+        - Contenido 1
+        - Contenido 2
+        - Contenido 3
 
-                        Orientaciones metodológicas:
-                        - Metodología 1
-                        - Metodología 2
+        Criterios de evaluación:
+        - Criterio 1
+        - Criterio 2
 
-                        Criterios de evaluación:
-                        - Criterio 1
-                        - Criterio 2
+        Indicadores de evaluación:
+        - Indicador 1
+        - Indicador 2
 
-                        Indicadores de evaluación:
-                        - Indicador 1
-                        - Indicador 2
-
-                        NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en el formato claro y directo.
-                    """
+        NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en el formato claro y directo.
+    """
 
     generated_schema = "⚠️ Error al generar contenido."
 
@@ -484,66 +889,122 @@ def generarPlanMicrocurricular(start_date, end_date, units_number, level, school
     except Exception as e:
         print(f"Error generando contenido: {e}")
 
-            # Crear contenido HTML para el PDF
+    # 2) Parsear en unidades
+    unidades = parse_gemini_response_to_micro_units(generated_schema)
+    if not unidades:
+        print("Sigue sin parsear unidades:", generated_schema)
+        return
+
+    # Generar PDF
     html_string = f"""
-<html>
-<head>
-  <style>
-    body {{ font-family: Arial, sans-serif; margin: 20px; font-size: 14px; line-height: 1.6; }}
-    h1, h2 {{ color: #333; }}
-    table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
-    th, td {{ border: 1px solid #999; padding: 8px; text-align: left; }}
-    th {{ background-color: #f2f2f2; }}
-    .unidad {{ page-break-before: always; margin-top: 50px; }}
-    pre {{ white-space: pre-wrap; word-wrap: break-word; }}
-  </style>
-</head>
-<body>
-  <h1>Plan Microcurricular de Clase</h1>
-  <p><strong>Fecha Inicio:</strong> {start_date}</p>
-  <p><strong>Fecha Fin:</strong> {end_date}</p>
-  
-  <p><strong>Nivel:</strong> {level}</p>
-  <p><strong>Materia:</strong> {school_subject.name}</p>
-  <p><strong>Número de unidades:</strong> {units_number}</p>
+    <html>
+    <head>
+        <style>
+            body {{
+                font-family: 'Arial', sans-serif;
+                margin: 25px;
+                font-size: 12.5px;
+                color: #000;
+            }}
+            h1 {{
+                font-size: 16px;
+                text-align: center;
+                font-weight: bold;
+            }}
+            .header {{
+                text-align: center;
+                font-weight: bold;
+                font-size: 14px;
+                margin-bottom: 10px;
+            }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+            }}
+            th, td {{
+                border: 1px solid black;
+                padding: 5px;
+                text-align: left;
+                vertical-align: top;
+            }}
+            .section-title {{
+                background-color: #D9D9D9;
+                font-weight: bold;
+                text-align: left;
+                padding: 6px;
+            }}
+        </style>
+    </head>
+    <body>
 
- <div class="unidad">
-    <h2>Planificación de Unidades</h2>
-    {format_units_to_boxes(generated_schema)}
-</div>
+    <h1>Plan Microcurricular para {school_subject}</h1>
+    <div class="header">PLANIFICACIÓN MICROCURRICULAR DE UNIDAD DIDÁCTICA O PARCIAL</div>
 
-</body>
-</html>
-"""
-    
+    <table>
+        <tr class="sub-header">
+        <td>Asignatura:</td>
+        <td>{school_subject.name}</td>
+        </tr>
+        <tr>
+        <td>N° Unidades: </td>
+        <td>{units_number}</td>
+        <td>Título:</td>
+        <td colspan="3">Planificación Microcurricular Generada</td>
+        </tr>
+        <tr>
+        <td>Curso:</td>
+        <td>{level}</td>
+        <td>N° Semanas:</td>
+        <td>{(end_date - start_date).days // 7}</td>
+        <td>Fecha de Inicio:</td>
+        <td>{start_date}</td>
+        </tr>
+        <tr>
+        <td>Paralelo:</td>
+        <td>A</td>
+        <td>Fecha de Finalización:</td>
+        <td colspan="3">{end_date}</td>
+        </tr>
+    </table>
 
+    <div class="section-title">1) CONTENIDO CURRICULAR POR UNIDAD</div>
+    {format_micro_units_to_boxes(generated_schema)}
 
-            # Crear PDF
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as output:
+    </body>
+    </html>
+    """
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as output:
         html = HTML(string=html_string)
         html.write_pdf(output.name)
-
-
+    
     gen = GeneratedContent.objects.create(user=user, school_subject=school_subject)
 
-    topics = extractTopicContentPerUnit(html_string)
-    objetives = extractTObjetivePerUnit(html_string)
-    content = MicroPlan.objects.create(
-                    generatedContentId = gen,
-                    school_subject=school_subject,
-                    start_date=start_date,
-                    end_date=end_date,
-                    grade=level,
-                    topic=topics if isinstance(topics, list) else [],
-                    goals=objetives if isinstance(objetives, list) else [],
-                    generated_content=html_string,  
-                )
+    # 5) Acumular en listas cada campo JSON
+    titles       = [u["titulo"]      for u in unidades]
+    objectives   = [u["goals"]       for u in unidades]
+    contents     = [u["unit_contents"] for u in unidades]
+    criterios    = [u["criterios"]   for u in unidades]
+    indicadores  = [u["indicadores"] for u in unidades]
 
-    with open(output.name, 'rb') as pdf_file:
-        content.pdf_file.save(f"plan_micro_{content.pk}.pdf", pdf_file)
+    # 6) Crear un MicroPlan por unidad
+    micro_plan = MicroPlan.objects.create(
+        generatedContentId = gen,
+        school_subject = school_subject,
+        unit_title = titles,
+        goals = objectives,
+        grade = level,
+        start_date = start_date,
+        end_date = end_date,
+        topic = contents,
+        evaluation_criteria = criterios,
+        evaluation_indicators = indicadores,
+    )
 
+    with open(output.name, "rb") as f:
+        micro_plan.pdf_file.save(f"plan_micro_{micro_plan.pk}.pdf", f)
 
-    
 
 
 def generarPlanAnual(start_date, end_date, units_number, level, school_subject, chat, user):
@@ -552,7 +1013,7 @@ def generarPlanAnual(start_date, end_date, units_number, level, school_subject, 
                 Define los objetivos de aprendizaje para una lección sobre la resolución la materia {school_subject}
                 nivel "{level}", usando **exactamente** este formato (sin añadir nada más) y priorizando añadir minimo 7 items por literal:
 
-                Unidad 1:
+                Unidad {units_number}:
                 Título: {{Título sugerido}}
                 Objetivos específicos:
                 - Objetivo 1
@@ -606,17 +1067,89 @@ def generarPlanAnual(start_date, end_date, units_number, level, school_subject, 
     # 3) Generar PDF completo
     html_string = f"""
                     <html>
-                        <head>
-                            {styleForHtml}
-                        </head>
-                        <body>
-                            <h1>Plan Anual: {school_subject.name}</h1>
-                            <p>Nivel: {level}</p>
-                            <p>Desde {start_date} hasta {end_date}</p>
-                            {format_units_to_boxes(generated_schema)}
-                        </body>
+                    <head>
+                    <style>
+                        body {{
+                        font-family: 'Arial', sans-serif;
+                        margin: 25px;
+                        font-size: 12.5px;
+                        color: #000;
+                        }}
+                        h1 {{
+                        font-size: 16px;
+                        text-align: center;
+                        font-weight: bold;
+                        }}
+                        .header {{
+                        text-align: center;
+                        font-weight: bold;
+                        font-size: 14px;
+                        margin-bottom: 10px;
+                        }}
+                        table {{
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 20px;
+                        }}
+                        th, td {{
+                        border: 1px solid black;
+                        padding: 5px;
+                        text-align: left;
+                        vertical-align: top;
+                        }}
+                        .section-title {{
+                        background-color: #D9D9D9;
+                        font-weight: bold;
+                        text-align: left;
+                        padding: 6px;
+                        }}
+                        .sub-header td {{
+                        background-color: #f2f2f2;
+                        font-weight: bold;
+                        }}
+                    </style>
+                    </head>
+                    <body>
+
+                    <h1>Plan Microcurricular para {school_subject}</h1>
+                    <div class="header">PLANIFICACIÓN MICROCURRICULAR DE UNIDAD DIDÁCTICA O PARCIAL</div>
+
+                    <table>
+                        <tr class="sub-header">
+                        <td>Asignatura:</td>
+                        <td>{school_subject.name}</td>
+                        </tr>
+                        <tr>
+                        <td>N° Unidades: </td>
+                        <td>{units_number}</td>
+                        <td>Título:</td>
+                        <td colspan="3">Planificación Microcurricular Generada</td>
+                        </tr>
+                        <tr>
+                        <td>Curso:</td>
+                        <td>{level}</td>
+                        <td>N° Semanas:</td>
+                        <td>{(end_date - start_date).days // 7}</td>
+                        <td>Fecha de Inicio:</td>
+                        <td>{start_date}</td>
+                        </tr>
+                        <tr>
+                        <td>Paralelo:</td>
+                        <td>A</td>
+                        <td>Fecha de Finalización:</td>
+                        <td colspan="3">{end_date}</td>
+                        </tr>
+                    </table>
+
+                    
+
+                    <div class="section-title">1) CONTENIDO CURRICULAR POR UNIDAD</div>
+
+                    {format_units_to_boxes(generated_schema)}
+
+                    </body>
                     </html>
-    """
+                """
 
 
 

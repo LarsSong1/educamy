@@ -64,8 +64,9 @@ class AnualPlan(models.Model):
 class MicroPlan(models.Model):
     generatedContentId = models.ForeignKey(GeneratedContent, on_delete=models.CASCADE, related_name='generated_microplans', null=True, blank=True)
     school_subject = models.ForeignKey(SchoolSubject, on_delete=models.CASCADE, null=True, blank=True)
+    unit_title = models.JSONField(default=list)
     goals = models.JSONField(default=list)
-    topic = models.JSONField(default=list)
+    topic = models.JSONField(default=list) # unit_contents
     start_date = models.DateField()
     end_date = models.DateField()
     grade = models.CharField(max_length=200)
@@ -73,11 +74,13 @@ class MicroPlan(models.Model):
     generated_content = models.TextField()
     year = models.PositiveIntegerField(default=datetime.datetime.now().year)
     content = models.TextField()
+    evaluation_criteria = models.JSONField(default=list)
+    evaluation_indicators = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Plan Anual de - {self.school_subject.name} ({self.year})"
+        return f"Plan Microcurricular de - {self.school_subject.name} ({self.year})"
 
 
 
