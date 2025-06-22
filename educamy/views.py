@@ -21,15 +21,12 @@ from django.contrib.auth.models import User
 import json
 # Cargar variables de entorno
 load_dotenv()
+from educamy.services.genai import GENAI_API_KEY, model
 
 
 
 
 
-# Configurar la API de Gemini
-# genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-genai.configure(api_key='AIzaSyDf0rm3_GvwCFX_Ae7pzIBNkALXWjhJmjk')
-print("API Key configurada correctamente. ", os.getenv('GEMINI_API_KEY'))
 
 
 
@@ -229,69 +226,6 @@ class MicroItinerarieDetailView(View):
         
         return render(request, 'microItinerarieDetail.html', context)
 
-
-
-# def extractTObjetivePerUnit(html_string):
-#     soup = BeautifulSoup(html_string, 'html.parser')
-#     unidades = []
-
-#     tablas = soup.find_all('table')
-
-#     for tabla in tablas:
-#         contenido = []
-#         filas = tabla.find_all('tr')
-
-#         for fila in filas:
-#             celdas = fila.find_all('td')
-#             if len(celdas) >= 2:
-#                 titulo = celdas[0].get_text(strip=True).lower()
-#                 if "objetivos" in titulo:
-#                     contenido_html = celdas[1]
-#                     items = contenido_html.find_all('li')
-#                     if items:
-#                         contenido = [li.get_text(strip=True) for li in items]
-#                     else:
-#                         texto = contenido_html.get_text(separator='\n').strip()
-#                         contenido = [line.strip() for line in texto.split('\n') if line.strip()]
-#                     break
-
-#         unidades.append(contenido)
-
-#     return unidades
-
-
-
-# def extractTopicContentPerUnit(html_string):
-#     soup = BeautifulSoup(html_string, 'html.parser')
-#     unidades = []
-
-#     # Cada tabla representa una unidad
-#     tablas = soup.find_all('table')
-
-#     for tabla in tablas:
-#         contenido = []
-#         filas = tabla.find_all('tr')
-
-#         for fila in filas:
-#             celdas = fila.find_all('td')
-#             if len(celdas) >= 2:
-#                 titulo = celdas[0].get_text(strip=True)
-#                 if titulo.lower() == 'contenidos':
-#                     # Aquí extraemos el contenido, puede estar en <ul><li> o en texto plano separado
-#                     contenido_html = celdas[1]
-#                     # Si hay <li>, extraemos cada ítem
-#                     items = contenido_html.find_all('li')
-#                     if items:
-#                         contenido = [li.get_text(strip=True) for li in items]
-#                     else:
-#                         # Si no hay <li>, extraemos texto dividido por saltos de línea o puntos
-#                         texto = contenido_html.get_text(separator='\n').strip()
-#                         contenido = [line.strip() for line in texto.split('\n') if line.strip()]
-#                     break  # Ya encontramos contenidos en esta tabla, pasamos a la siguiente
-
-#         unidades.append(contenido)
-
-#     return unidades
 
 
 
@@ -634,11 +568,6 @@ def splitDatesInUnits(start_date, end_date, units_number):
 
 
 
-# models = genai.list_models()
-
-# for model in models:
-#     print(model.name)
-modelName = 'gemini-1.5-flash-002'
 
 
 def generateContent(request):
@@ -653,22 +582,23 @@ def generateContent(request):
             level = form.cleaned_data['level']
             school_subject = form.cleaned_data['school_subject']
             units = splitDatesInUnits(start_date, end_date, units_number)
+            college_name = form.cleaned_data['college_name']
+            teacher_name = form.cleaned_data['teacher_name']
 
             # Inicializar Gemini
-            model = genai.GenerativeModel(modelName)
+            
             chat = model.start_chat(history=[])
 
 
             if itinearieType == 'micro':
                 # Generar un solo PROMPT grande
-                generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user)
+                generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user, college_name, teacher_name)
                 return redirect('educamy:dashboard')
             elif itinearieType == 'annual':
                 # Generar un solo PROMPT grande
-                generarPlanAnual(start_date, end_date, units_number, level, school_subject, chat, user)
+                generarPlanAnual(start_date, end_date, units_number, level, school_subject, chat, user, college_name, teacher_name, teacher_name)
                 return redirect('educamy:dashboard')
-            elif itinearieType == 'quiz':
-                generarPreguntasMateria()
+          
 
     else:
         form = itinerarieForm()
@@ -678,173 +608,8 @@ def generateContent(request):
 
 
 
-# def generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user):
-#     print("API Key configurada correctamente. ", os.getenv('GEMINI_API_KEY'))
 
-#     prompt = f"""
-#                         Eres un asistente educativo profesional. Genera la planificación completa de {units_number} unidades didácticas para la materia "{school_subject.name}", nivel "{level}" de educación básica.
-
-#                         Para cada unidad proporciona:
-
-#                         - Título de la unidad
-#                         - 2 objetivos específicos
-#                         - 3 contenidos temáticos principales
-#                         - 2 orientaciones metodológicas
-#                         - 2 criterios de evaluación
-#                         - 2 indicadores de evaluación
-
-#                         Formato de salida para cada unidad:
-
-#                         Unidad {units_number}:
-#                         Título: {{Título sugerido}}
-
-#                         Objetivos específicos:
-#                         - Objetivo 1
-#                         - Objetivo 2
-
-#                         Contenidos:
-#                         - Contenido 1
-#                         - Contenido 2
-#                         - Contenido 3
-
-#                         Orientaciones metodológicas:
-#                         - Metodología 1
-#                         - Metodología 2
-
-#                         Criterios de evaluación:
-#                         - Criterio 1
-#                         - Criterio 2
-
-#                         Indicadores de evaluación:
-#                         - Indicador 1
-#                         - Indicador 2
-
-#                         NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en el formato claro y directo.
-#                     """
-
-#     generated_schema = "⚠️ Error al generar contenido."
-
-#     try:
-#         response = chat.send_message(prompt)
-#         generated_schema = response.text
-#     except Exception as e:
-#         print(f"Error generando contenido: {e}")
-
-#             # Crear contenido HTML para el PDF
-#     html_string = f"""
-#                     <html>
-#                     <head>
-#                     <style>
-#                         body {{
-#                         font-family: 'Arial', sans-serif;
-#                         margin: 25px;
-#                         font-size: 12.5px;
-#                         color: #000;
-#                         }}
-#                         h1 {{
-#                         font-size: 16px;
-#                         text-align: center;
-#                         font-weight: bold;
-#                         }}
-#                         .header {{
-#                         text-align: center;
-#                         font-weight: bold;
-#                         font-size: 14px;
-#                         margin-bottom: 10px;
-#                         }}
-#                         table {{
-#                         width: 100%;
-#                         border-collapse: collapse;
-#                         margin-bottom: 20px;
-#                         }}
-#                         th, td {{
-#                         border: 1px solid black;
-#                         padding: 5px;
-#                         text-align: left;
-#                         vertical-align: top;
-#                         }}
-#                         .section-title {{
-#                         background-color: #D9D9D9;
-#                         font-weight: bold;
-#                         text-align: left;
-#                         padding: 6px;
-#                         }}
-#                         .sub-header td {{
-#                         background-color: #f2f2f2;
-#                         font-weight: bold;
-#                         }}
-#                     </style>
-#                     </head>
-#                     <body>
-
-#                     <h1>Plan Microcurricular para {school_subject}</h1>
-#                     <div class="header">PLANIFICACIÓN MICROCURRICULAR DE UNIDAD DIDÁCTICA O PARCIAL</div>
-
-#                     <table>
-#                         <tr class="sub-header">
-#                         <td>Asignatura:</td>
-#                         <td>{school_subject.name}</td>
-#                         </tr>
-#                         <tr>
-#                         <td>N° Unidades: </td>
-#                         <td>{units_number}</td>
-#                         <td>Título:</td>
-#                         <td colspan="3">Planificación Microcurricular Generada</td>
-#                         </tr>
-#                         <tr>
-#                         <td>Curso:</td>
-#                         <td>{level}</td>
-#                         <td>N° Semanas:</td>
-#                         <td>{(end_date - start_date).days // 7}</td>
-#                         <td>Fecha de Inicio:</td>
-#                         <td>{start_date}</td>
-#                         </tr>
-#                         <tr>
-#                         <td>Paralelo:</td>
-#                         <td>A</td>
-#                         <td>Fecha de Finalización:</td>
-#                         <td colspan="3">{end_date}</td>
-#                         </tr>
-#                     </table>
-
-                    
-
-#                     <div class="section-title">1) CONTENIDO CURRICULAR POR UNIDAD</div>
-
-#                     {format_units_to_boxes(generated_schema)}
-
-#                     </body>
-#                     </html>
-#                 """
-    
-
-
-#             # Crear PDF
-#     with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as output:
-#         html = HTML(string=html_string)
-#         html.write_pdf(output.name)
-
-
-#     gen = GeneratedContent.objects.create(user=user, school_subject=school_subject)
-
-#     topics = extractTopicContentPerUnit(html_string)
-#     objetives = extractTObjetivePerUnit(html_string)
-#     content = MicroPlan.objects.create(
-#                     generatedContentId = gen,
-#                     school_subject=school_subject,
-#                     start_date=start_date,
-#                     end_date=end_date,
-#                     grade=level,
-#                     topic=topics if isinstance(topics, list) else [],
-#                     goals=objetives if isinstance(objetives, list) else [],
-#                     generated_content=html_string,  
-#                 )
-
-#     with open(output.name, 'rb') as pdf_file:
-#         content.pdf_file.save(f"plan_micro_{content.pk}.pdf", pdf_file)
-
-
-def generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user):
+def generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user, college_name):
     prompt = f"""
         Eres un asistente educativo profesional. Genera la planificación completa de {units_number} unidades didácticas para la materia "{school_subject.name}", nivel "{level}" de educación básica.
 
@@ -938,19 +703,29 @@ def generarPlanMicrocurricular(start_date, end_date, units_number, level, school
     </head>
     <body>
 
-    <h1>Plan Microcurricular para {school_subject}</h1>
-    <div class="header">PLANIFICACIÓN MICROCURRICULAR DE UNIDAD DIDÁCTICA O PARCIAL</div>
+    <table class="sin-borde">
+            <tr>
+                <td style="width: 20%; text-align: left;"></td>
+                <td style="width: 60%; text-align: center;">
+                    <div class="encabezado">ESCUELA FISCAL<br>“{college_name.upper()}”</div>
+                    <div style="text-align: center; font-weight: bold; font-size: 14px;">PLANIFICACIÓN MICROCURRICULAR DE UNIDAD DIDÁCTICA O PARCIAL</div>
+                </td>
+                <td style="width: 20%; text-align: right;">
+                    <strong>AÑO LECTIVO<br>{start_date.year}-{end_date.year}</strong>
+                </td>
+            </tr>
+    </table>
 
     <table>
         <tr class="sub-header">
-        <td>Asignatura:</td>
-        <td>{school_subject.name}</td>
+            <td>Asignatura:</td>
+            <td>{school_subject.name}</td>
         </tr>
         <tr>
-        <td>N° Unidades: </td>
-        <td>{units_number}</td>
-        <td>Título:</td>
-        <td colspan="3">Planificación Microcurricular Generada</td>
+            <td>N° Unidades: </td>
+            <td>{units_number}</td>
+            <td>Título:</td>
+            <td colspan="3">Planificación Microcurricular Generada</td>
         </tr>
         <tr>
         <td>Curso:</td>
@@ -1192,76 +967,6 @@ def generarPlanAnual(start_date, end_date, units_number, level, school_subject, 
 
 
   
-
-
-
-def generarPreguntasMateria(request, school_subject, start_date, end_date, level):
-    # Iniciar conversación con Gemini para generar preguntas
-    model = genai.GenerativeModel('gemini-1.5-flash-002')
-    chat = model.start_chat(history=[])
-
-    # Crear el prompt para generar preguntas basadas en la materia seleccionada
-    prompt = f"""
-    Eres un asistente educativo. Genera un conjunto de preguntas relacionadas con la materia '{school_subject.name}'.
-    Las preguntas deben ser adecuadas para un nivel '{level}' y deben cubrir los siguientes aspectos:
-    - Definiciones clave
-    - Aplicación práctica de conceptos
-    - Preguntas de reflexión
-    - Preguntas para evaluar comprensión
-
-    Utiliza un estilo claro y profesional.
-    """
-
-    generated_questions = "⚠️ Error al generar preguntas."
-    try:
-        response = chat.send_message(prompt)
-        generated_questions = response.text
-    except Exception as e:
-        print(f"Error generando preguntas: {e}")
-
-    # Generar HTML para las preguntas
-    html_string = f"""
-    <html>
-    <head>
-      <style>
-        body {{ font-family: Arial, sans-serif; margin: 20px; font-size: 14px; line-height: 1.6; }}
-        h1 {{ color: #333; }}
-        ul {{ padding-left: 20px; }}
-        li {{ margin-bottom: 10px; }}
-      </style>
-    </head>
-    <body>
-      <h1>Preguntas sobre la materia: {school_subject.name}</h1>
-      <p><strong>Fecha de inicio:</strong> {start_date}</p>
-      <p><strong>Fecha de fin:</strong> {end_date}</p>
-      <h2>Preguntas generadas:</h2>
-      <ul>
-        {''.join(f'<li>{question}</li>' for question in generated_questions.splitlines())}
-      </ul>
-    </body>
-    </html>
-    """
-
-    # Crear PDF para las preguntas
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as output:
-        html = HTML(string=html_string)
-        html.write_pdf(output.name)
-
-        content = GeneratedContent.objects.create(
-            user=request.user,
-            school_subject=school_subject,
-            start_date=start_date,
-            end_date=end_date,
-            grade=level,
-            generated_content=html_string,
-        )
-
-        # Guardar el PDF generado
-        with open(output.name, 'rb') as pdf_file:
-            content.pdf_file.save(f"preguntas_{content.pk}.pdf", pdf_file)
-
-    return redirect('educamy:dashboard')  # Redirigir al dashboard
-
 
 
 
