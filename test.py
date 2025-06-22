@@ -3,4 +3,4 @@ import os
 
 load_dotenv()
 
-print(f"GENAI_API_KEY: {os.getenv('GEMINI_API_KEY')}")
+print(f"SLIDESPEAK: {os.getenv('SLIDESPEAK_API_KEY')}")

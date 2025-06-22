@@ -27,6 +27,13 @@ class CreateUser(UserCreationForm):
         self.fields['password2'].widget.attrs.update({
     'class': 'w-full p-2 border-2 border-black rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500'
 })
+        
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        if User.objects.filter(username=username).exists():
+            raise ValidationError("Este nombre de usuario ya está en uso. Elige otro.")
+        return username
 
     class Meta:
         model = User

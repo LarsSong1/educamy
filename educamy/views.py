@@ -22,6 +22,7 @@ import json
 # Cargar variables de entorno
 load_dotenv()
 from educamy.services.genai import GENAI_API_KEY, model
+from django.utils.decorators import method_decorator
 
 
 
@@ -78,7 +79,7 @@ def logoutApp(request):
     return redirect('educamy:login')
 
 
-
+@method_decorator(login_required, name='dispatch')
 class DashboardView(View):
     def get(self, request, *args, **kwargs):
 
@@ -105,7 +106,7 @@ class DashboardView(View):
             return render(request, 'dashboard.html', context)
     
 
-
+@method_decorator(login_required, name='dispatch')
 class ItinerariesView(View):
     def get(self, request, *args, **kwargs):
         annualItineraries = AnualPlan.objects.filter(generatedContentId__user=request.user).order_by('-created_at')
@@ -125,7 +126,7 @@ class ItinerariesView(View):
         }
         return render(request, 'itineraries.html', context)
     
-
+@method_decorator(login_required, name='dispatch')
 class AnnualPlanDeleteView(View):
     def post(self, request, pk):
         annualItineraries = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
@@ -133,7 +134,7 @@ class AnnualPlanDeleteView(View):
         messages.success(request, 'Plan anual eliminado correctamente.')
         return redirect('educamy:itineraries')
         
-
+@method_decorator(login_required, name='dispatch')
 class MicroPlanDeleteView(View):
     def post(self, request, pk):
         microItineraries = get_object_or_404(MicroPlan, pk=pk, generatedContentId__user=request.user)
@@ -141,7 +142,7 @@ class MicroPlanDeleteView(View):
         messages.success(request, 'Plan microcurricular eliminado correctamente.')
         return redirect('educamy:itineraries')
 
-
+@method_decorator(login_required, name='dispatch')
 class SchoolSubjectsView(View):
     def get(self, request, *args, **kwargs):
         form = AddSchoolSubjectForm()
@@ -170,7 +171,7 @@ class SchoolSubjectsView(View):
             return render(request, 'schoolSubject.html', context)
     
 
-
+@method_decorator(login_required, name='dispatch')
 class SchoolSubjectEditView(View):
     def get(self, request, pk):
         subject = get_object_or_404(SchoolSubject, pk=pk, user=request.user)
@@ -185,7 +186,7 @@ class SchoolSubjectEditView(View):
             return redirect('educamy:school_subjects')
         return render(request, 'editSchoolSubject.html', {'form': form, 'subject': subject})
 
-
+@method_decorator(login_required, name='dispatch')
 class SchoolSubjectDeleteView(View):
     def post(self, request, pk):
         subject = get_object_or_404(SchoolSubject, pk=pk, user=request.user)
@@ -194,7 +195,7 @@ class SchoolSubjectDeleteView(View):
 
 
 
-
+@method_decorator(login_required, name='dispatch')
 class AnnualItinerarieDetailView(View):
     def get(self, request, pk):
         annualItinerarie = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
@@ -210,7 +211,7 @@ class AnnualItinerarieDetailView(View):
         }
         return render(request, 'annualItinerarieDetail.html', context)
 
-
+@method_decorator(login_required, name='dispatch')
 class MicroItinerarieDetailView(View):
     def get(self, request, pk):
         microItinerarie = get_object_or_404(MicroPlan, pk=pk, generatedContentId__user=request.user)
