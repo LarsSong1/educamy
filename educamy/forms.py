@@ -105,6 +105,13 @@ class itinerarieForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={'class': BASE_INPUT_CLASS})
     )
+
+    parallel = forms.CharField(
+        max_length=200,
+        label="Paralelo",
+        required=False,
+        widget=forms.TextInput(attrs={'class': BASE_INPUT_CLASS})
+    )
     
 
 
@@ -128,12 +135,19 @@ class itinerarieForm(forms.Form):
 
         teacher_name = cleaned_data.get("teacher_name")
         college_name = cleaned_data.get("college_name")
+        parallel = cleaned_data.get("parallel")
 
         if not teacher_name or not teacher_name.strip():
             self.add_error('teacher_name', "El nombre del docente es obligatorio.")
 
         if not college_name or not college_name.strip():
             self.add_error('college_name', "El nombre del colegio es obligatorio.")
+        
+        if not parallel or not parallel.strip():
+            self.add_error('parallel', "El paralelo es obligatorio.")
+
+
+        
 
         if start_date and end_date and end_date < start_date:
             raise ValidationError("La fecha de fin debe ser igual o posterior a la fecha de inicio.")

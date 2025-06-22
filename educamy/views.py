@@ -387,21 +387,44 @@ def parse_gemini_response_to_micro_units(text):
 
 
 
-def format_micro_units_to_boxes(text):
+
+def format_micro_units_to_boxes(text, school_subject):
     # Usamos el parseador adecuado para MicroPlan
     unidades = parse_gemini_response_to_micro_units(text)
     html = ""
 
-    # Definimos los títulos de las columnas y las claves correspondientes
+
+   
+
+    # Derive the subject prefix (e.g., "EF" from "Educación Física")
+    subject_initials = "".join([word[0] for word in school_subject.name.split() if word[0].isalpha()]).upper()
+    
+    # Define column headers and their corresponding keys
+
+    section_prefix_map = {
+        "Objetivos específicos": "OB",
+        "Contenidos": "CO",
+        "Criterios de evaluación": "CE",
+        "Indicadores de evaluación": "IE",
+        # Add lowercase keys if your 'title' variable might come in lowercase from the schema
+        "objetivos": "OB",
+        "contenidos": "CO",
+        "criterios": "CE",
+        "indicadores": "IE",    
+        
+    }
+   
     sections = [
-        ("Objetivos específicos", "goals"),
-        ("Contenidos", "unit_contents"),
-        ("Criterios de evaluación", "criterios"),
-        ("Indicadores de evaluación", "indicadores"),
+            ("Objetivos específicos", "goals"),
+            ("Contenidos", "unit_contents"),
+            ("Criterios de evaluación", "criterios"),
+            ("Indicadores de evaluación", "indicadores"),
     ]
+   
+    
     n_cols = len(sections)
 
-    for index, unidad in enumerate(unidades, start=1):
+    for unit_index, unidad in enumerate(unidades, start=1):
         # 1) Título que ocupa TODO el ancho
         html += f"""
         <table style="
@@ -412,19 +435,18 @@ def format_micro_units_to_boxes(text):
             font-family: Arial, sans-serif;
             font-size: 14px;
         ">
-          <tr>
-            <th colspan="{n_cols}" style="
-                padding: 10px;
-                font-size: 16px;
-                text-align: left;
-                border: 1px solid #000;
-            ">
-              Unidad {index}: {unidad['titulo']}
-            </th>
-          </tr>
-          
-          <!-- 2) Fila de encabezados de sección -->
-          <tr>
+            <tr>
+                <th colspan="{n_cols}" style="
+                    padding: 10px;
+                    font-size: 16px;
+                    text-align: left;
+                    border: 1px solid #000;
+                ">
+                    Unidad {unit_index}: {unidad['titulo']}
+                </th>
+            </tr>
+            
+            <tr>
         """
         
         for title, _key in sections:
@@ -433,14 +455,31 @@ def format_micro_units_to_boxes(text):
                 padding: 8px;
                 text-align: left;
                 border: 1px solid #000;
+                font: bold;
             ">{title}</th>
             """
         html += "</tr>"
 
         # 3) Fila con los contenidos de cada sección
         html += "<tr>"
-        for _title, key in sections:
+        for title, key in sections:
             items = unidad.get(key, [])
+            html_list_items = ""
+
+
+            section_prefix = section_prefix_map.get(title, "") 
+            
+            
+            if not section_prefix:
+                words = title.split()
+                section_prefix = "".join([word[0] for word in words if word[0].isalpha()]).upper()
+            
+            
+            for item_idx, item in enumerate(items, start=1):
+                    # Objectives get the O.SUBJECT_INITIALS.UNIT_INDEX.ITEM_INDEX. prefix
+                html_list_items += f'<li style="margin-bottom:6px;">{section_prefix}.{subject_initials}.{unit_index}.{item_idx}. {item}</li>'
+            
+
             html += f"""
             <td style="
                 padding: 8px;
@@ -448,7 +487,7 @@ def format_micro_units_to_boxes(text):
                 border: 1px solid #000;
             ">
               <ul style="margin:0; padding-left:20px; list-style: disc inside;">
-                {''.join(f'<li style="margin-bottom:6px;">{item}</li>' for item in items)}
+                {html_list_items}
               </ul>
             </td>
             """
@@ -460,10 +499,25 @@ def format_micro_units_to_boxes(text):
 
 
 
-
-def format_units_to_boxes(text):
+def format_annual_units_to_boxes(text, school_subject):
     unidades = parse_gemini_response_to_units(text)
     html = ""
+    subject_initials = "".join([word[0] for word in school_subject.name.split() if word[0].isalpha()]).upper()
+
+
+    section_prefix_map = {
+        "Objetivos específicos": "OB",
+        "Contenidos": "CO",
+        "Criterios de evaluación": "CE",
+        "Indicadores de evaluación": "IE",
+        "Orientaciones metodológicas": "OM",
+        # Add lowercase keys if your 'title' variable might come in lowercase from the schema
+        "objetivos": "OB",
+        "contenidos": "CO",
+        "criterios": "CE",
+        "indicadores": "IE",
+        "metodologias": "OM",
+    }
 
     # Definimos los títulos de las columnas y la clave en el dict
     sections = [
@@ -475,7 +529,7 @@ def format_units_to_boxes(text):
     ]
     n_cols = len(sections)
 
-    for index, unidad in enumerate(unidades, start=1):
+    for unit_index, unidad in enumerate(unidades, start=1):
         # 1) Título que ocupa TODO el ancho
         html += f"""
         <table style="
@@ -486,34 +540,50 @@ def format_units_to_boxes(text):
             font-family: Arial, sans-serif;
             font-size: 14px;
         ">
-          <tr>
-            <th colspan="{n_cols}" style="
-                padding: 10px;
-                font-size: 16px;
-                text-align: left;
-                border: 1px solid #000;
-            ">
-              Unidad {index}: {unidad['titulo']}
-            </th>
-          </tr>
-          
-          <!-- 2) Fila de encabezados de sección -->
-          <tr>
+            <tr>
+                <th colspan="{n_cols}" style="
+                    padding: 10px;
+                    font-size: 16px;
+                    text-align: left;
+                    border: 1px solid #000;
+                ">
+                    Unidad {unit_index}: {unidad['titulo']}
+                </th>
+            </tr>
+            
+            <tr>
         """
+        
         for title, _key in sections:
             html += f"""
             <th style="
                 padding: 8px;
                 text-align: left;
                 border: 1px solid #000;
+                font: bold;
             ">{title}</th>
             """
         html += "</tr>"
 
         # 3) Fila con los contenidos de cada sección
         html += "<tr>"
-        for _title, key in sections:
+        for title, key in sections:
             items = unidad.get(key, [])
+            html_list_items = ""
+
+            section_prefix = section_prefix_map.get(title, "") 
+            
+            
+            if not section_prefix:
+                words = title.split()
+                section_prefix = "".join([word[0] for word in words if word[0].isalpha()]).upper()
+            
+            
+            for item_idx, item in enumerate(items, start=1):
+                    # Objectives get the O.SUBJECT_INITIALS.UNIT_INDEX.ITEM_INDEX. prefix
+                html_list_items += f'<li style="margin-bottom:6px;">{section_prefix}.{subject_initials}.{unit_index}.{item_idx}. {item}</li>'
+            
+
             html += f"""
             <td style="
                 padding: 8px;
@@ -521,7 +591,7 @@ def format_units_to_boxes(text):
                 border: 1px solid #000;
             ">
               <ul style="margin:0; padding-left:20px; list-style: disc inside;">
-                {''.join(f'<li style="margin-bottom:6px;">{item}</li>' for item in items)}
+                {html_list_items}
               </ul>
             </td>
             """
@@ -584,6 +654,32 @@ def generateContent(request):
             units = splitDatesInUnits(start_date, end_date, units_number)
             college_name = form.cleaned_data['college_name']
             teacher_name = form.cleaned_data['teacher_name']
+            parallel = form.cleaned_data['parallel']
+
+            if school_subject.name == 'Lengua y Literatura':
+                area = "Comunicacional, Literario, Creativo"
+                transversal_values = "Lectura crítica, Expresión oral y escrita"
+            elif school_subject.name == 'Matemática':
+                area = "Científica, Resolutiva, Lógica"
+                transversal_values = "Razonamiento lógico, Resolución de problemas"
+            elif school_subject.name == 'Ciencias Naturales':
+                area = "Científica, Ambiental, Experimental"
+                transversal_values = "Investigación científica, Conciencia ambiental"
+            elif school_subject.name == 'Estudios Sociales':
+                area = "Geográfico, Histórico, Cultural"
+                transversal_values = "Ciudadanía, Diversidad cultural"
+            elif school_subject.name == 'Educación Física':
+                area = "Corporal, Física, Recreativa"
+                transversal_values = "Salud, Bienestar físico, Trabajo en equipo"
+            elif school_subject.name == 'Educación Cultural y Artística':
+                area = "Creativa, Expresiva, Artística"
+                transversal_values = "Creatividad, Expresión artística, Valoración cultural"
+            elif school_subject.name == 'Inglés':
+                area = "Lingüístico, Comunicacional, Cultural"
+                transversal_values = "Competencia lingüística, Diversidad cultural"
+            else:
+                area = "General, Diversificada"  # Por defecto
+                transversal_values = "Desarrollo integral, Pensamiento crítico"
 
             # Inicializar Gemini
             
@@ -592,11 +688,11 @@ def generateContent(request):
 
             if itinearieType == 'micro':
                 # Generar un solo PROMPT grande
-                generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user, college_name, teacher_name)
+                generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user, college_name, teacher_name, area, transversal_values, parallel)
                 return redirect('educamy:dashboard')
             elif itinearieType == 'annual':
                 # Generar un solo PROMPT grande
-                generarPlanAnual(start_date, end_date, units_number, level, school_subject, chat, user, college_name, teacher_name, teacher_name)
+                generarPlanAnual(start_date, end_date, units_number, level, school_subject, chat, user, college_name, teacher_name, area, transversal_values, parallel)
                 return redirect('educamy:dashboard')
           
 
@@ -609,7 +705,10 @@ def generateContent(request):
 
 
 
-def generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user, college_name):
+def generarPlanMicrocurricular(start_date, end_date, units_number, level, school_subject, chat, user, college_name, teacher_name, area, transversal_values, parallel):
+
+    delta_days = (end_date - start_date).days
+    num_weeks = max(1, (delta_days + 6) // 7)
     prompt = f"""
         Eres un asistente educativo profesional. Genera la planificación completa de {units_number} unidades didácticas para la materia "{school_subject.name}", nivel "{level}" de educación básica.
 
@@ -665,39 +764,43 @@ def generarPlanMicrocurricular(start_date, end_date, units_number, level, school
     <html>
     <head>
         <style>
+            @page {{
+                size: A4 landscape;
+                margin: 20mm;
+            }}
             body {{
                 font-family: 'Arial', sans-serif;
-                margin: 25px;
-                font-size: 12.5px;
+                font-size: 12px;
+                margin: 30px;
                 color: #000;
-            }}
-            h1 {{
-                font-size: 16px;
-                text-align: center;
-                font-weight: bold;
-            }}
-            .header {{
-                text-align: center;
-                font-weight: bold;
-                font-size: 14px;
-                margin-bottom: 10px;
             }}
             table {{
                 width: 100%;
                 border-collapse: collapse;
-                margin-bottom: 20px;
             }}
             th, td {{
                 border: 1px solid black;
-                padding: 5px;
-                text-align: left;
-                vertical-align: top;
-            }}
-            .section-title {{
-                background-color: #D9D9D9;
-                font-weight: bold;
-                text-align: left;
                 padding: 6px;
+                vertical-align: top;
+                text-align: left;
+            }}
+            .sin-borde td {{
+                border: none;
+            }}
+            .encabezado {{
+                text-align: center;
+                font-size: 16px;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }}
+            .subtitulo {{
+                font-weight: bold;
+                background-color: #D9D9D9;
+            }}
+            .seccion {{
+                margin-top: 20px;
+                margin-bottom: 10px;
+                font-weight: bold;
             }}
         </style>
     </head>
@@ -715,36 +818,42 @@ def generarPlanMicrocurricular(start_date, end_date, units_number, level, school
                 </td>
             </tr>
     </table>
-
+    <div class="seccion">1)Datos informativos</div>
     <table>
+        <tr>
+            <td style="width: 10%;"><strong>Docente:</strong></td>
+            <td style="width: 40%;">{teacher_name}</td>
+            <td style="width: 10%;"><strong>Área:</strong></td>
+            <td style="width: 40%;">{area}</td>
+        </tr>
         <tr class="sub-header">
-            <td>Asignatura:</td>
-            <td>{school_subject.name}</td>
+            <td style="width: 10%;"><strong>Asignatura:</strong></td>
+            <td style="width: 40%;">{school_subject.name}</td>
+            <td style="width: 10%;"><strong>Grado:</strong></td>
+            <td style="width: 40%;">{level}</td>
         </tr>
         <tr>
-            <td>N° Unidades: </td>
-            <td>{units_number}</td>
-            <td>Título:</td>
-            <td colspan="3">Planificación Microcurricular Generada</td>
+            <td style="width: 10%;"><strong>N° Unidades:</strong> </td>
+            <td style="width: 40%;">{units_number}</td>
+            <td style="width: 10%;"><strong>Evaluado:</strong> </td>
+            <td style="width: 40%;"> </td>
         </tr>
         <tr>
-        <td>Curso:</td>
-        <td>{level}</td>
-        <td>N° Semanas:</td>
-        <td>{(end_date - start_date).days // 7}</td>
-        <td>Fecha de Inicio:</td>
-        <td>{start_date}</td>
+            <td style="width: 10%;"><strong>N° Semanas:</strong></td>
+            <td style="width: 40%;">{ num_weeks }</td>
+            <td style="width: 10%;"><strong>Paralelo:</strong></td>
+            <td style="width: 40%;">{parallel}</td>
         </tr>
         <tr>
-        <td>Paralelo:</td>
-        <td>A</td>
-        <td>Fecha de Finalización:</td>
-        <td colspan="3">{end_date}</td>
+            <td style="width: 10%;"><strong>Fecha de Inicio:</strong></td>
+            <td style="width: 40%;">{start_date.strftime("%d/%m/%Y")}</td>
+            <td style="width: 10%;"><strong>Fecha de Finalización:</strong></td>
+            <td style="width: 40%;" colspan="3">{end_date.strftime("%d/%m/%Y")}</td>
         </tr>
     </table>
 
-    <div class="section-title">1) CONTENIDO CURRICULAR POR UNIDAD</div>
-    {format_micro_units_to_boxes(generated_schema)}
+    <div class="seccion">2) CONTENIDO CURRICULAR POR UNIDAD</div>
+    {format_micro_units_to_boxes(generated_schema, school_subject)}
 
     </body>
     </html>
@@ -775,6 +884,10 @@ def generarPlanMicrocurricular(start_date, end_date, units_number, level, school
         topic = contents,
         evaluation_criteria = criterios,
         evaluation_indicators = indicadores,
+        teacher_name = teacher_name,
+        college_name = college_name,
+        area = area,
+        parallel = parallel,
     )
 
     with open(output.name, "rb") as f:
@@ -782,7 +895,11 @@ def generarPlanMicrocurricular(start_date, end_date, units_number, level, school
 
 
 
-def generarPlanAnual(start_date, end_date, units_number, level, school_subject, chat, user):
+def generarPlanAnual(start_date, end_date, units_number, level, school_subject, chat, user, college_name, teacher_name, area, transversal_values, parallel):
+
+    delta_days = (end_date - start_date).days
+    num_weeks = max(1, (delta_days + 6) // 7)
+
     prompt = f"""
                 Eres un asistente educativo profesional. Genera la planificación completa curricular anual de {units_number} unidades para la materia "{school_subject.name}", 
                 Define los objetivos de aprendizaje para una lección sobre la resolución la materia {school_subject}
@@ -841,89 +958,105 @@ def generarPlanAnual(start_date, end_date, units_number, level, school_subject, 
 
     # 3) Generar PDF completo
     html_string = f"""
-                    <html>
-                    <head>
+            <html>
+                <head>
                     <style>
+                        @page {{
+                            size: A4 landscape;
+                            margin: 20mm;
+                        }}
                         body {{
-                        font-family: 'Arial', sans-serif;
-                        margin: 25px;
-                        font-size: 12.5px;
-                        color: #000;
-                        }}
-                        h1 {{
-                        font-size: 16px;
-                        text-align: center;
-                        font-weight: bold;
-                        }}
-                        .header {{
-                        text-align: center;
-                        font-weight: bold;
-                        font-size: 14px;
-                        margin-bottom: 10px;
+                            font-family: 'Arial', sans-serif;
+                            font-size: 12px;
+                            margin: 30px;
+                            color: #000;
                         }}
                         table {{
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-bottom: 20px;
+                            width: 100%;
+                            border-collapse: collapse;
                         }}
                         th, td {{
-                        border: 1px solid black;
-                        padding: 5px;
-                        text-align: left;
-                        vertical-align: top;
+                            border: 1px solid black;
+                            padding: 6px;
+                            vertical-align: top;
+                            text-align: left;
                         }}
-                        .section-title {{
-                        background-color: #D9D9D9;
-                        font-weight: bold;
-                        text-align: left;
-                        padding: 6px;
+                        .sin-borde td {{
+                            border: none;
                         }}
-                        .sub-header td {{
-                        background-color: #f2f2f2;
-                        font-weight: bold;
+                        .encabezado {{
+                            text-align: center;
+                            font-size: 16px;
+                            font-weight: bold;
+                            margin-bottom: 10px;
+                        }}
+                        .subtitulo {{
+                            font-weight: bold;
+                            background-color: #D9D9D9;
+                        }}
+                        .seccion {{
+                            margin-top: 20px;
+                            margin-bottom: 10px;
+                            font-weight: bold;
                         }}
                     </style>
-                    </head>
+                </head>
                     <body>
 
-                    <h1>Plan Microcurricular para {school_subject}</h1>
-                    <div class="header">PLANIFICACIÓN MICROCURRICULAR DE UNIDAD DIDÁCTICA O PARCIAL</div>
+                        <table class="sin-borde">
+                            <tr>
+                                <td style="width: 20%; text-align: left;"></td>
+                                <td style="width: 60%; text-align: center;">
+                                    <div class="encabezado">ESCUELA FISCAL<br>“{college_name.upper()}”</div>
+                                    <div style="text-align: center; font-weight: bold; font-size: 14px;">PLANIFICACIÓN CURRICULAR ANNUAL DE UNIDAD DIDÁCTICA O PARCIAL</div>
+                                </td>
+                                <td style="width: 20%; text-align: right;">
+                                    <strong>AÑO LECTIVO<br>{start_date.year}-{end_date.year}</strong>
+                                </td>
+                            </tr>
+                        </table>
+                        <div class="seccion">1)Datos informativos</div>
 
-                    <table>
-                        <tr class="sub-header">
-                        <td>Asignatura:</td>
-                        <td>{school_subject.name}</td>
-                        </tr>
-                        <tr>
-                        <td>N° Unidades: </td>
-                        <td>{units_number}</td>
-                        <td>Título:</td>
-                        <td colspan="3">Planificación Microcurricular Generada</td>
-                        </tr>
-                        <tr>
-                        <td>Curso:</td>
-                        <td>{level}</td>
-                        <td>N° Semanas:</td>
-                        <td>{(end_date - start_date).days // 7}</td>
-                        <td>Fecha de Inicio:</td>
-                        <td>{start_date}</td>
-                        </tr>
-                        <tr>
-                        <td>Paralelo:</td>
-                        <td>A</td>
-                        <td>Fecha de Finalización:</td>
-                        <td colspan="3">{end_date}</td>
-                        </tr>
-                    </table>
+                        <table class="seccion">
+                            <tr>
+                                <td style="width: 10%;"><strong>Docente:</strong></td>
+                                <td style="width: 40%;">{teacher_name}</td>
+                                <td style="width: 10%;"><strong>Área:</strong></td>
+                                <td style="width: 40%;">{area}</td>
+                            </tr>
+                            <tr class="sub-header">
+                                <td style="width: 10%;"><strong>Asignatura:</strong></td>
+                                <td style="width: 40%;">{school_subject.name}</td>
+                                <td style="width: 10%;"><strong>Grado:</strong></td>
+                                <td style="width: 40%;">{level}</td>
+                            </tr>
+                            <tr>
+                                <td style="width: 10%;"><strong>N° Unidades:</strong> </td>
+                                <td style="width: 40%;">{units_number}</td>
+                                <td style="width: 10%;"><strong>Evaluado:</strong> </td>
+                                <td style="width: 40%;"> </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 10%;"><strong>N° Semanas:</strong></td>
+                                <td style="width: 40%;">{ num_weeks }</td>
+                                <td style="width: 10%;"><strong>Paralelo:</strong></td>
+                                <td style="width: 40%;">{parallel}</td>
+                            </tr>
+                            <tr>
+                                <td style="width: 10%;"><strong>Fecha de Inicio:</strong></td>
+                                <td style="width: 40%;">{start_date.strftime("%d/%m/%Y")}</td>
+                                <td style="width: 40%;" colspan="3">{end_date.strftime("%d/%m/%Y")}</td>
+                            </tr>
+                        </table>
 
-                    
+                        
 
-                    <div class="section-title">1) CONTENIDO CURRICULAR POR UNIDAD</div>
+                        <div class="seccion">2) CONTENIDO CURRICULAR POR UNIDAD</div>
 
-                    {format_units_to_boxes(generated_schema)}
+                        {format_annual_units_to_boxes(generated_schema, school_subject)}
 
                     </body>
-                    </html>
+            </html>
                 """
 
 
@@ -956,6 +1089,10 @@ def generarPlanAnual(start_date, end_date, units_number, level, school_subject, 
         methodologies         = metodologias,
         evaluation_criteria   = criterios,
         evaluation_indicators = indicadores,
+        parallel = parallel,
+        area = area,
+        teacher_name = teacher_name,
+        college_name = college_name,
         
     )
 
