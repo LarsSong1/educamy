@@ -17,6 +17,9 @@ urlpatterns = [
     path('itineraries/annual/<int:pk>/detail', AnnualItinerarieDetailView.as_view(), name='detail_annual_plan'),
     path('itineraries/micro/<int:pk>/detail', MicroItinerarieDetailView.as_view(), name='detail_micro_plan'),
     path('itineraries/micro/<int:pk>/delete/', MicroPlanDeleteView.as_view(), name='delete_micro_plan'),
+    
+
+    
 
 
 ]

@@ -88,6 +88,38 @@ class MicroPlan(models.Model):
 
 
 
+
+
+
+
+class Quiz(models.Model):
+    microplan = models.ForeignKey(MicroPlan, on_delete=models.CASCADE, null=True, blank=True,related_name='quizzes_micro')
+    anual_plan = models.ForeignKey(AnualPlan, on_delete=models.CASCADE, null=True, blank=True, related_name='quizzes_anual')
+    title = models.CharField(max_length=200)
+    content_topic = models.TextField()  # El tema específico del contenido
+    unit_number = models.IntegerField()
+    quiz_data = models.TextField()  # El contenido completo del quiz generado por IA
+    pdf_file = models.FileField(upload_to='quizzes/', blank=True, null=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    
+    STATUS_CHOICES = [
+        ('draft', 'Borrador'),
+        ('published', 'Publicado'),
+        ('completed', 'Completado')
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    
+    def __str__(self):
+        return f"Quiz - {self.anual_plan.school_subject.name} - Unidad {self.unit_number}"
+    
+    class Meta:
+        verbose_name = 'Quiz'
+        verbose_name_plural = 'Quizzes'
+        ordering = ['-created_date']
+
+
+
 class PptxFile(models.Model):
     anual_plan = models.ForeignKey('AnualPlan', on_delete=models.CASCADE, null=True, blank=True, related_name='pptx_files')
     micro_plan = models.ForeignKey('MicroPlan', on_delete=models.CASCADE, null=True, blank=True, related_name='pptx_files')

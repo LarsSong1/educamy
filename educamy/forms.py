@@ -162,6 +162,7 @@ class itinerarieForm(forms.Form):
 
 
 
+
 class AddSchoolSubjectForm(forms.ModelForm):
     class Meta:
         model = SchoolSubject
