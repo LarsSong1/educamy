@@ -251,22 +251,54 @@ def generate_questions_html(preguntas_texto):
     return html_preguntas
 
 
+
 @method_decorator(login_required, name='dispatch')
 class AnnualItinerarieDetailView(View):
     def get(self, request, pk):
         annualItinerarie = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
 
-        quizzes = Quiz.objects.filter(anual_plan=annualItinerarie)
+        all_quizzes = Quiz.objects.filter(anual_plan=annualItinerarie)
+        
+        # Organizar quizzes por unidad
+        quizzes_by_unit = {}
+        total_units = len(annualItinerarie.unit_title)
 
 
         duration = (annualItinerarie.end_date - annualItinerarie.start_date).days
         counter = len(annualItinerarie.unit_title)
         print(counter)
+        
+
+
+        for unit_num in range(1, total_units + 1):
+            quizzes_by_unit[unit_num] = []
+
+
+        # Agrupar quizzes por número de unidad
+        for quiz in all_quizzes:
+            unit_number = quiz.unit_number  # Asumiendo que tienes este campo
+            if unit_number in quizzes_by_unit:
+                quizzes_by_unit[unit_number].append({
+                    'id': quiz.id,
+                    'title': quiz.title,
+                    'content_topic': quiz.content_topic,
+                    'status': quiz.status,  # o el campo que uses para el estado
+                    'unit_number': quiz.unit_number,
+                    'pdf_file': quiz.pdf_file.url if quiz.pdf_file else '',
+                    'created_date': quiz.created_date.strftime('%Y-%m-%d'),
+                })
+
+        # Convertir a lista ordenada por unidad
+        quizzes_organized = []
+        for unit_num in range(1, total_units + 1):
+            quizzes_organized.append(quizzes_by_unit[unit_num])
+
+
         context = {
              'annualItinerarie': annualItinerarie,
              'duration': duration,
              'counter': counter,
-             'quizzes': quizzes,
+             'quizzes': quizzes_organized,
             
         }
         
@@ -276,17 +308,45 @@ class AnnualItinerarieDetailView(View):
     def post(self, request, pk):
         annualItinerarie = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
 
-
-
-        quizzes = Quiz.objects.filter(anual_plan=annualItinerarie)
+        all_quizzes = Quiz.objects.filter(anual_plan=annualItinerarie)
+        
+        # Organizar quizzes por unidad
+        quizzes_by_unit = {}
+        total_units = len(annualItinerarie.unit_title)
 
         duration = (annualItinerarie.end_date - annualItinerarie.start_date).days
         counter = len(annualItinerarie.unit_title)
+
+        for unit_num in range(1, total_units + 1):
+            quizzes_by_unit[unit_num] = []
+
+
+        # Agrupar quizzes por número de unidad
+        for quiz in all_quizzes:
+            unit_number = quiz.unit_number  # Asumiendo que tienes este campo
+            if unit_number in quizzes_by_unit:
+                quizzes_by_unit[unit_number].append({
+                    'id': quiz.id,
+                    'title': quiz.title,
+                    'content_topic': quiz.content_topic,
+                    'status': quiz.status,  # o el campo que uses para el estado
+                    'unit_number': quiz.unit_number,
+                    'pdf_file': quiz.pdf_file.url if quiz.pdf_file else '',
+                    'created_date': quiz.created_date.strftime('%Y-%m-%d'),
+                })
+
+        # Convertir a lista ordenada por unidad
+        quizzes_organized = []
+        for unit_num in range(1, total_units + 1):
+            quizzes_organized.append(quizzes_by_unit[unit_num])
+
+
+
         context = {
             'annualItinerarie': annualItinerarie,
             'duration': duration,
             'counter': counter,
-            'quizzes': quizzes
+            'quizzes': quizzes_organized
         }
         content = request.POST.get('content')
         unit_number = request.POST.get('unit_number')
@@ -304,7 +364,7 @@ class AnnualItinerarieDetailView(View):
             content_topic=content,
             anual_plan_id=annual_plan_id,
             created_by=request.user,
-            status='Completada'
+            status='Generado'
         )
 
         # 2. Ahora sí genera el PDF y lo asocia al quiz
