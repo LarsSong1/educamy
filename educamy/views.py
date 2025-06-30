@@ -1677,6 +1677,7 @@ def generarPlanAnual(start_date, end_date, units_number, level, school_subject, 
 
 
 def generar_preguntas_quiz(content):
+    
     prompt = f"""
     Eres un generador de quizzes para profesores.
     Redacta 10 preguntas de opción múltiple sobre: "{content}".
@@ -1705,3 +1706,12 @@ def generar_preguntas_quiz(content):
     except Exception as e:
         print("Error generando quiz:", e)
         return "No se pudo generar el quiz automáticamente."
+    
+
+
+
+def delete_quiz(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    annual_plan_id = quiz.anual_plan_id  
+    quiz.delete()
+    return redirect('educamy:detail_annual_plan', pk=annual_plan_id)
