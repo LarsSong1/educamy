@@ -194,31 +194,71 @@ class SchoolSubjectDeleteView(View):
         return redirect('educamy:school_subjects')
 
 
+
+
+
+
 def generate_questions_html(preguntas_texto):
-    """Función auxiliar para generar HTML de las preguntas con mejor formato"""
-    preguntas = [preg.strip() for preg in preguntas_texto.splitlines() if preg.strip()]
+    """Función auxiliar para generar HTML de las preguntas con opciones múltiples"""
+    lineas = [linea.strip() for linea in preguntas_texto.splitlines() if linea.strip()]
     html_preguntas = ""
     
-    for i, pregunta in enumerate(preguntas, 1):
-        html_preguntas += f"""
-        <div class="question-item">
-            <div class="question-number">Pregunta {i}:</div>
-            <div style="margin-bottom: 10px;">{pregunta}</div>
-            <div class="answer-space">
-                <em style="color: #666; font-size: 10px;">Espacio para respuesta:</em>
-                <div style="height: 60px; border: 1px dashed #ccc; margin-top: 5px; background-color: white;"></div>
+    i = 0
+    pregunta_num = 1
+    
+    while i < len(lineas):
+        linea = lineas[i]
+        
+        # Buscar el inicio de una pregunta (línea que empiece con número)
+        if linea.startswith(f"{pregunta_num}."):
+            # Extraer la pregunta
+            pregunta = linea[len(f"{pregunta_num}."):].strip()
+            
+            html_preguntas += f"""
+            <div class="question-item">
+                <div class="question-number">Pregunta {pregunta_num}:</div>
+                <div style="margin-bottom: 10px; font-weight: bold;">{pregunta}</div>
+            """
+            
+            # Buscar las opciones A, B, C, D
+            i += 1
+            opciones_html = ""
+            
+            while i < len(lineas) and any(lineas[i].startswith(f"{letra})") for letra in ['A', 'B', 'C', 'D']):
+                opcion = lineas[i]
+                opciones_html += f"""
+                    <div style="margin-bottom: 5px; padding-left: 20px;">
+                        {opcion}
+                    </div>
+                """
+                i += 1
+            
+            html_preguntas += opciones_html
+            
+            # Agregar espacio para respuesta
+            html_preguntas += f"""
+                <div class="answer-space">
+                    <em style="color: #666; font-size: 10px;">Respuesta seleccionada:</em>
+                    <div style="height: 30px; border: 1px dashed #ccc; margin-top: 5px; background-color: white;"></div>
+                </div>
             </div>
-        </div>
-        """
+            """
+            
+            pregunta_num += 1
+        else:
+            i += 1
     
     return html_preguntas
-
 
 
 @method_decorator(login_required, name='dispatch')
 class AnnualItinerarieDetailView(View):
     def get(self, request, pk):
         annualItinerarie = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
+
+        quizzes = Quiz.objects.filter(anual_plan=annualItinerarie)
+
+
         duration = (annualItinerarie.end_date - annualItinerarie.start_date).days
         counter = len(annualItinerarie.unit_title)
         print(counter)
@@ -226,7 +266,7 @@ class AnnualItinerarieDetailView(View):
              'annualItinerarie': annualItinerarie,
              'duration': duration,
              'counter': counter,
-             
+             'quizzes': quizzes,
             
         }
         
@@ -235,12 +275,18 @@ class AnnualItinerarieDetailView(View):
 
     def post(self, request, pk):
         annualItinerarie = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
+
+
+
+        quizzes = Quiz.objects.filter(anual_plan=annualItinerarie)
+
         duration = (annualItinerarie.end_date - annualItinerarie.start_date).days
         counter = len(annualItinerarie.unit_title)
         context = {
             'annualItinerarie': annualItinerarie,
             'duration': duration,
             'counter': counter,
+            'quizzes': quizzes
         }
         content = request.POST.get('content')
         unit_number = request.POST.get('unit_number')
@@ -268,6 +314,10 @@ class AnnualItinerarieDetailView(View):
         # 3. Listo, ahora puedes renderizar la página de detalle
         return render(request, 'annualItinerarieDetail.html', context)
     
+
+
+
+
 
 
 
@@ -1569,13 +1619,27 @@ def generarPlanAnual(start_date, end_date, units_number, level, school_subject, 
 def generar_preguntas_quiz(content):
     prompt = f"""
     Eres un generador de quizzes para profesores.
-    Redacta 10 preguntas para un quiz sobre: "{content}".
-    Solo preguntas, sin respuestas.
+    Redacta 10 preguntas de opción múltiple sobre: "{content}".
+    
+    Para cada pregunta:
+    - Escribe la pregunta
+    - Proporciona exactamente 4 opciones (A, B, C, D)
+    - Indica cuál es la respuesta correcta al final de cada pregunta
+    
+    Formato requerido:
+    1. [Pregunta]
+    A) [Opción A]
+    B) [Opción B]
+    C) [Opción C]
+    D) [Opción D]
+    Respuesta correcta: [Letra]
+    
+    2. [Siguiente pregunta]
+    ...y así sucesivamente
     """
     try:
         chat = model.start_chat(history=[])
         resp = chat.send_message(prompt)
-        # Puedes devolver como lista o como texto, según tu modelo Quiz
         preguntas = resp.text
         return preguntas
     except Exception as e:

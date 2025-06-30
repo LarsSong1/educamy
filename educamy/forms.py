@@ -176,3 +176,5 @@ class AddSchoolSubjectForm(forms.ModelForm):
             'description': _('Descripción de la materia'),
         }
         
+
+

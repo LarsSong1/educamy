@@ -125,9 +125,9 @@
         <div class="bg-white rounded-xl shadow p-4 w-full">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold">Quizes Generados </h2>
-                <button class="bg-purple-700 text-white px-4 py-2 rounded-md hover:bg-purple-900">
+                {% comment %} <button class="bg-purple-700 text-white px-4 py-2 rounded-md hover:bg-purple-900">
                     Generar Nuevo Quiz
-                </button>
+                </button> {% endcomment %}
             </div>
 
             <div class="overflow-x-auto">
@@ -185,6 +185,7 @@
     const evalIndicator = {{annualItinerarie.evaluation_indicators|safe}};
     console.log(evalIndicator)
     const contents = {{ annualItinerarie.unit_contents|safe }};
+    {% comment %} const quizzes = {{ quizzes|safe }}; {% endcomment %}
 
     // Mostrar los detalles de la unidad seleccionada
     document.querySelectorAll('.unit-btn').forEach(button => {
