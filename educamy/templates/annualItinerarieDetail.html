@@ -161,10 +161,31 @@
     const contents = {{ annualItinerarie.unit_contents|safe }};
     const quizzes = {{ quizzes|safe }};
     console.log(quizzes, "quizzes")
+
+    function asignarEventosQuizForm() {
+    document.querySelectorAll('#form-quiz').forEach(form => {
+        if (!form.hasAttribute('data-handler')) {
+            form.setAttribute('data-handler', 'true');
+            const btnQuiz = form.querySelector('.btn-quiz');
+            const loader = form.querySelector('.loader');
+            form.addEventListener('submit', (event) => {
+                if (!form.checkValidity()) {
+                    return;
+                }
+                btnQuiz.classList.add('hidden');
+                loader.classList.remove('hidden');
+                });
+            }
+        });
+    }
+
     
 
     // Mostrar los detalles de la unidad seleccionada
     document.querySelectorAll('.unit-btn').forEach(button => {
+
+
+        
         button.addEventListener('click', function() {
             const unitNumber = this.getAttribute('data-unit');
 
@@ -243,7 +264,7 @@
                                 <input type="hidden" name="unit_number" value="${unitNumber}">
                                 <input type="hidden" name="annual_plan_id" value="{{ annualItinerarie.pk }}">
 
-                                <button class="btn-quiz flex gap-2 items-center" type="submit">
+                                <button class="btn-quiz cursor-pointer flex gap-2 items-center" type="submit">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-input-icon lucide-file-input"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
                                     Generar Quiz
                                 </button>
@@ -260,6 +281,8 @@
                 li.innerHTML = contentHTML;
                 contentsList.appendChild(li);
             });
+
+            asignarEventosQuizForm()
 
 
 
@@ -319,27 +342,7 @@
         }
 
 
-        const formQuizzes = document.querySelectorAll('#form-quiz');
-
-        formQuizzes.forEach(form => {
-            const btnQuiz = form.querySelector('.btn-quiz');
-            const loader = form.querySelector('.loader');
-
-            form.addEventListener('submit', (event) => {
-                // Prevenimos el comportamiento por defecto (enviar el formulario)
-
-                // Validar si el formulario es válido
-                if (!form.checkValidity()) {
-                    return;
-                }
-
-                // Ocultar el botón y mostrar el loader
-                btnQuiz.classList.add('hidden');
-                loader.classList.remove('hidden');
-
-                
-            });
-        });
+       
     });
 </script>
 

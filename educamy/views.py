@@ -372,13 +372,8 @@ class AnnualItinerarieDetailView(View):
         # (Tu función genera y guarda el PDF en quiz.pdf_file)
 
         # 3. Listo, ahora puedes renderizar la página de detalle
-        return render(request, 'annualItinerarieDetail.html', context)
+        return redirect('educamy:detail_annual_plan', pk=pk)
     
-
-
-
-
-
 
 
 def generar_pdf_quiz(titulo, preguntas_texto, unidad, tema, quiz):
@@ -656,17 +651,87 @@ def generar_pdf_quiz(titulo, preguntas_texto, unidad, tema, quiz):
 class MicroItinerarieDetailView(View):
     def get(self, request, pk):
         microItinerarie = get_object_or_404(MicroPlan, pk=pk, generatedContentId__user=request.user)
+
+
+        all_quizzes = Quiz.objects.filter(microplan=microItinerarie)
+        
+        
+        # Organizar quizzes por unidad
+        quizzes_by_unit = {}
+        total_units = len(microItinerarie.unit_title)
+
+
         duration = (microItinerarie.end_date - microItinerarie.start_date).days
         counter = len(microItinerarie.unit_title)
         print(counter, "counter")
+
+
+
+
+        for unit_num in range(1, total_units + 1):
+            quizzes_by_unit[unit_num] = []
+
+
+        # Agrupar quizzes por número de unidad
+        for quiz in all_quizzes:
+            unit_number = quiz.unit_number  # Asumiendo que tienes este campo
+            if unit_number in quizzes_by_unit:
+                quizzes_by_unit[unit_number].append({
+                    'id': quiz.id,
+                    'title': quiz.title,
+                    'content_topic': quiz.content_topic,
+                    'status': quiz.status,  # o el campo que uses para el estado
+                    'unit_number': quiz.unit_number,
+                    'pdf_file': quiz.pdf_file.url if quiz.pdf_file else '',
+                    'created_date': quiz.created_date.strftime('%Y-%m-%d'),
+                })
+
+        # Convertir a lista ordenada por unidad
+        quizzes_organized = []
+        for unit_num in range(1, total_units + 1):
+            quizzes_organized.append(quizzes_by_unit[unit_num])
+
+        print(quizzes_organized)
         
         context = {
             'microItinerarie': microItinerarie,
             'duration': duration,
             'counter': counter,
+            'quizzes': quizzes_organized
         }
+
+        
         
         return render(request, 'microItinerarieDetail.html', context)
+
+    
+
+    def post(self, request, pk):
+        content = request.POST.get('content')
+        unit_number = request.POST.get('unit_number')
+        microplan_id = request.POST.get('microplan_id')
+
+        # Llama a Gemini para generar las preguntas
+        preguntas = generar_preguntas_quiz(content)
+
+        titulo = f"Quiz Unidad {unit_number}"
+
+        # 1. Crea el quiz sin el PDF (el campo pdf_file puede quedar vacío por ahora)
+        quiz = Quiz.objects.create(
+            title=titulo,
+            unit_number=unit_number,
+            content_topic=content,
+            microplan_id=microplan_id,
+            created_by=request.user,
+            status='Generado'
+        )
+
+        # 2. Ahora sí genera el PDF y lo asocia al quiz
+        generar_pdf_quiz(titulo, preguntas, unit_number, content, quiz)
+        # (Tu función genera y guarda el PDF en quiz.pdf_file)
+
+        # 3. Listo, ahora puedes renderizar la página de detalle
+        return redirect('educamy:detail_micro_plan', pk=pk)
 
 
 
@@ -1444,12 +1509,12 @@ def generarPlanAnual(start_date, end_date, units_number, level, school_subject, 
                 - Indicador 2
                 Duracion Unidad {{Duración en semanas sugerida en base a la fecha inicio y fin establecida}} 
                 - Duracion
+
+
+                NO agregues introducciones, conclusiones ni mensajes extra. Solo las unidades en el formato claro y directo.
            
 
-                Repite para Unidad 2, Unidad 3, …, Unidad {units_number}.
-                Detalles:
-                - Fecha de inicio: {start_date}
-                - Fecha de fin:    {end_date}
+                
             """
     # 1) Llamada a Gemini
     try:
