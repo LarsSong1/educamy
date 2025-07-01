@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import loginView, registerView, DashboardView, generateContent, logoutApp, ItinerariesView, SchoolSubjectsView, SchoolSubjectEditView, SchoolSubjectDeleteView, MicroPlanDeleteView, AnnualPlanDeleteView, AnnualItinerarieDetailView, MicroItinerarieDetailView, delete_quiz
+from .views import loginView, registerView, userProfile, changePassword, DashboardView, generateContent, logoutApp, ItinerariesView, SchoolSubjectsView, SchoolSubjectEditView, SchoolSubjectDeleteView, MicroPlanDeleteView, AnnualPlanDeleteView, AnnualItinerarieDetailView, MicroItinerarieDetailView, delete_quiz
 
 app_name = 'educamy'
 
@@ -7,6 +7,8 @@ urlpatterns = [
     path('', loginView, name='login'),
     path('register/', registerView, name='register'),
     path('logout/', logoutApp, name='logout'),
+    path('profile/<int:pk>/', userProfile, name='profile'),
+    path('profile/password/', changePassword, name='change_password'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
     path('school_subjects/', SchoolSubjectsView.as_view(), name='school_subjects'),
     path('school_subjects/edit/<int:pk>/', SchoolSubjectEditView.as_view(), name='edit_school_subject'),

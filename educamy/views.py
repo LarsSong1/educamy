@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib import messages
 from django.utils.translation import activate
 from .forms import CreateUser
@@ -13,8 +13,8 @@ import google.generativeai as genai
 from bs4 import BeautifulSoup
 from datetime import timedelta
 from django.contrib.auth.decorators import login_required
-from .models import GeneratedContent, SchoolSubject, MicroPlan, AnualPlan, Quiz
-from .forms import itinerarieForm, AddSchoolSubjectForm
+from .models import GeneratedContent, SchoolSubject, MicroPlan, AnualPlan, Quiz, Profile
+from .forms import itinerarieForm, AddSchoolSubjectForm, UpdateProfile
 from django.shortcuts import get_object_or_404
 from math import ceil
 from django.contrib.auth.models import User
@@ -26,6 +26,9 @@ from django.utils.decorators import method_decorator
 import qrcode
 import base64
 from io import BytesIO
+from django.dispatch import receiver
+from django.db.models.signals import post_save
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -59,7 +62,7 @@ def loginView(request):
             user = authenticate(username= username, password=password)
             if user is not None:
                 login(request, user)
-                messages.success(request, f'Bienvenido {username}')
+                # messages.success(request, f'Bienvenido {username}')
                 return redirect('educamy:dashboard')
             else:
                 messages.error(request, 'Usuario o contraseña incorrectos')
@@ -77,6 +80,70 @@ def loginView(request):
 def logoutApp(request):
     logout(request)
     return redirect('educamy:login')
+
+@login_required
+def userProfile(request, pk):
+    activate('es')
+
+    if request.user.pk != pk:
+        # messages.error(request, "No tienes permiso para ver este perfil.")
+        return redirect('educamy:dashboard')
+
+
+    user = get_object_or_404(User, pk=pk)
+    
+    if request.method == 'POST':
+        form = UpdateProfile(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('educamy:profile', pk=request.user.pk)
+    else:
+        form = UpdateProfile(instance=request.user)
+
+
+    context = {
+        'user': user,
+        'form': form,
+        'user_photo': request.user.profile.photo.url if request.user.profile.photo else None
+
+        
+    }
+    return render(request, 'profile.html', context)
+
+
+
+def changePassword(request):
+    activate('es')
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            
+            # Actualizamos la sesión para que no se cierre al cambiar la contraseña
+            update_session_auth_hash(request, form.user)
+            
+            # Redirigimos a la página del perfil del usuario
+            return redirect('educamy:profile', pk=request.user.pk)  # Pasamos el pk del usuario
+    else:
+        form = PasswordChangeForm(request.user) 
+
+    return render(request, 'changePassword.html', {'form': form})
+
+
+
+
+
+# Crear un perfil por cada usuario creado
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)    
+
+
+# Guardar el perfil creado
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.profile.save()
 
 
 @method_decorator(login_required, name='dispatch')
@@ -131,7 +198,7 @@ class AnnualPlanDeleteView(View):
     def post(self, request, pk):
         annualItineraries = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
         annualItineraries.delete()
-        messages.success(request, 'Plan anual eliminado correctamente.')
+        # messages.success(request, 'Plan anual eliminado correctamente.')
         return redirect('educamy:itineraries')
         
 @method_decorator(login_required, name='dispatch')
@@ -139,7 +206,7 @@ class MicroPlanDeleteView(View):
     def post(self, request, pk):
         microItineraries = get_object_or_404(MicroPlan, pk=pk, generatedContentId__user=request.user)
         microItineraries.delete()
-        messages.success(request, 'Plan microcurricular eliminado correctamente.')
+        # messages.success(request, 'Plan microcurricular eliminado correctamente.')
         return redirect('educamy:itineraries')
 
 @method_decorator(login_required, name='dispatch')
@@ -1220,6 +1287,10 @@ def generateContent(request):
             # Inicializar Gemini
             
             chat = model.start_chat(history=[])
+
+
+
+                
 
 
             if itinearieType == 'micro':
