@@ -205,15 +205,19 @@ class itinerarieForm(forms.Form):
 class AddSchoolSubjectForm(forms.ModelForm):
     class Meta:
         model = SchoolSubject
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'file']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'file': forms.ClearableFileInput(attrs={'class': 'form-control p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500',
+            'accept': '.pdf,application/pdf'
+            })
         }
         labels = {
             'name': _('Nombre de la materia'),
             'description': _('Descripción de la materia'),
+            'file': _('Archivo de la materia'),
         }
-        
 
+       
 

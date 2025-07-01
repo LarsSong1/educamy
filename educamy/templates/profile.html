@@ -59,7 +59,7 @@
         {% if user_photo %}
           <img class="rounded-full object-cover h-40 w-40" src="{{ user_photo }}" alt="user-profile" />
         {% else %}
-          <img class="rounded-md object-contain" width="250" height="250" src="{% static 'img/avatar.jpg' %}" alt="Foto de perfil por defecto" />
+          <img class="rounded-md object-contain w-[250px] h-[250px]" width="250" height="250" src="{% static 'img/avatar.jpg' %}" alt="Foto de perfil por defecto" />
         {% endif %}
       </div>
       <div class="max-w-[800px] flex justify-center items-center mx-auto">
