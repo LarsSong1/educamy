@@ -132,13 +132,21 @@ class Quiz(models.Model):
 class PptxFile(models.Model):
     anual_plan = models.ForeignKey('AnualPlan', on_delete=models.CASCADE, null=True, blank=True, related_name='pptx_files')
     micro_plan = models.ForeignKey('MicroPlan', on_delete=models.CASCADE, null=True, blank=True, related_name='pptx_files')
-    pptxfile = models.FileField(upload_to='pptx_files/', null=True, blank=True)
+    
+    # Campo para almacenar el archivo descargado
+    pptxfile = models.FileField(upload_to='pptx_files/', null=True, blank=True)  
+    
+    # Campo para almacenar la URL del archivo generado
+    file_url = models.URLField(max_length=1000, null=True, blank=True)
+    
     title = models.CharField(max_length=200, blank=True, null=True)
-    date = models.DateField()
+    date = models.DateField(default=datetime.date.today)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f"PPTX {self.title} - {self.created_at}"
 
 
 

@@ -29,6 +29,7 @@ from io import BytesIO
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.contrib.auth.decorators import login_required
+from educamy.services.slidespeak import headers
 
 
 
@@ -774,31 +775,44 @@ class MicroItinerarieDetailView(View):
     
 
     def post(self, request, pk):
-        content = request.POST.get('content')
-        unit_number = request.POST.get('unit_number')
-        microplan_id = request.POST.get('microplan_id')
+        if 'slide_content' in request.POST:
 
-        # Llama a Gemini para generar las preguntas
-        preguntas = generar_preguntas_quiz(content)
+            content = request.POST.get('slide_content')
+            unit_number = request.POST.get('unit_number')
+            microplan_id = request.POST.get('microplan_id')
+            print("funcionando")
+            generarDiapositiva(content, unit_number, microplan_id, request.user, pk, 'detail_micro_plan')
 
-        titulo = f"Quiz Unidad {unit_number}"
 
-        # 1. Crea el quiz sin el PDF (el campo pdf_file puede quedar vacío por ahora)
-        quiz = Quiz.objects.create(
-            title=titulo,
-            unit_number=unit_number,
-            content_topic=content,
-            microplan_id=microplan_id,
-            created_by=request.user,
-            status='Generado'
-        )
+            return redirect('educamy:detail_micro_plan', pk=pk)
 
-        # 2. Ahora sí genera el PDF y lo asocia al quiz
-        generar_pdf_quiz(titulo, preguntas, unit_number, content, quiz)
-        # (Tu función genera y guarda el PDF en quiz.pdf_file)
+        elif 'content' in request.POST:
 
-        # 3. Listo, ahora puedes renderizar la página de detalle
-        return redirect('educamy:detail_micro_plan', pk=pk)
+            content = request.POST.get('content')
+            unit_number = request.POST.get('unit_number')
+            microplan_id = request.POST.get('microplan_id')
+
+            # Llama a Gemini para generar las preguntas
+            preguntas = generar_preguntas_quiz(content)
+
+            titulo = f"Quiz Unidad {unit_number}"
+
+            # 1. Crea el quiz sin el PDF (el campo pdf_file puede quedar vacío por ahora)
+            quiz = Quiz.objects.create(
+                title=titulo,
+                unit_number=unit_number,
+                content_topic=content,
+                microplan_id=microplan_id,
+                created_by=request.user,
+                status='Generado'
+            )
+
+            # 2. Ahora sí genera el PDF y lo asocia al quiz
+            generar_pdf_quiz(titulo, preguntas, unit_number, content, quiz)
+            # (Tu función genera y guarda el PDF en quiz.pdf_file)
+
+            # 3. Listo, ahora puedes renderizar la página de detalle
+            return redirect('educamy:detail_micro_plan', pk=pk)
 
 
 
@@ -1846,8 +1860,75 @@ def generar_preguntas_quiz(content):
 
 
 
-def delete_quiz(request, quiz_id):
+def deleteAnnualQuiz(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
     annual_plan_id = quiz.anual_plan_id  
     quiz.delete()
     return redirect('educamy:detail_annual_plan', pk=annual_plan_id)
+
+
+def deleteMicroQuiz(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    microPlan = quiz.microplan_id
+    quiz.delete()
+    return redirect('educamy:detail_annual_plan', pk=microPlan)
+
+
+
+
+
+def generarDiapositiva(title, unit_number, microplan_id, user, pk, url_plan):
+    url = "https://api.slidespeak.co/api/v1/presentation/generate"
+    print(headers, "headers")
+    payload = {
+        "plain_text": title,
+        "length": 6,  # El número de diapositivas
+        "template": "default",  # Plantilla predeterminada
+        "language": "ORIGINAL",  # Idioma original
+        "fetch_images": True,  # Si se desean imágenes
+        "tone": "default",  # Tono de la presentación
+        "verbosity": "standard",  # Nivel de detalle
+        "custom_user_instructions": "Ensure to cover the key events"
+    }
+    try:
+        # Solicitar la creación de la presentación
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()  # Lanza un error si la solicitud falla
+
+        # Obtener la URL del archivo PPTX generado (esto debe venir de la API)
+        presentation_data = response.json()
+        pptx_url = presentation_data.get('file_url')  # Asumiendo que esta es la URL que devuelve la API
+
+        if pptx_url:
+            # Hacer una solicitud GET para descargar el archivo
+            file_response = requests.get(pptx_url)
+            file_response.raise_for_status()  # Lanza un error si la descarga falla
+
+            # Guardar el archivo descargado en el sistema de archivos del servidor
+            pptx_file = NamedTemporaryFile(delete=True)
+            pptx_file.write(file_response.content)
+            pptx_file.flush()  # Asegúrate de que el archivo esté completamente escrito
+
+            # Crear un nuevo registro en el modelo PptxFile
+            pptx_record = PptxFile(
+                micro_plan_id=microplan_id,  # Asociamos el microplan
+                title=f"Presentación de la Unidad {unit_number} ",
+                date=datetime.date.today(),
+                description="Presentación generada automáticamente",
+                pptxfile=pptx_file,  # Asignamos el archivo descargado
+                file_url=pptx_url,  # Guardamos la URL del archivo
+                status='generated'
+            )
+            pptx_record.save()
+
+            # Mensaje de éxito
+            return redirect(f'educamy:{url_plan}', pk)  # Redirige donde desees
+
+        else:
+            print('Se ha presentado un error')
+            return redirect('educamy:dashboard')  # Redirige en caso de error en la API
+
+    except requests.exceptions.RequestException as e:
+        print("Error al generar la presentación")
+        return redirect('educamy:dashboard')
+

@@ -173,9 +173,22 @@
                         <p class="text-sm w-[75%]">${item}</p>
                         <div style="display:flex; gap:10px; flex-direction: column;">
                             <a class="px-4 bg-orange-700 text-white rounded-md text-xs flex items-center w-[200px] gap-2" href="">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-input-icon lucide-file-input"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
-                                Generar Diapositiva
+                                
                             </a>
+                            <form id="form-slide" class="px-4 bg-orange-700 text-white rounded-md text-xs flex items-center w-[200px] gap-2"  method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="slide_content" value="${item}">
+                                <input type="hidden" name="unit_number" value="${unitNumber}">
+                                <input type="hidden" name="microplan_id" value="{{ microItinerarie.pk }}">
+                                <button class="btn-slide cursor-pointer flex gap-2 items-center" type="submit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-input-icon lucide-file-input"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
+                            
+                                    Generar Diapositiva
+                                </button>
+                                <div class="flex justify-end col-span-2">
+                                    <div class="loader-pptx hidden"></div>
+                                </div>
+                            </form>
                             <form id="form-quiz" class="px-4 bg-green-900 text-white rounded-md text-xs cursor-pointer flex items-center w-[200px] gap-2"  method="POST">
                                 {% csrf_token %}
                                 <input type="hidden" name="content" value="${item}">
@@ -259,7 +272,7 @@
                             <a href="${quiz.pdf_file}" download="${quiz.pdf_file}_quiz.pdf" title="Descargar" class="text-green-500">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-icon lucide-download"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
                             </a>
-                            <a href="/quiz/delete/${quiz.id}/" title="Eliminar" class="text-red-500">
+                            <a href="/quiz/delete_micro/${quiz.id}/" title="Eliminar" class="text-red-500">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                             </a>
                         </td>
@@ -311,5 +324,35 @@
         background-position: left;
       }
     }
+
+
+
+
+    .loader-pptx {
+      width: fit-content;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 15px;
+      background: radial-gradient(circle closest-side, #000 94%, #0000) right/calc(200% - 1em) 100%;
+      animation: btn-slide 1s infinite alternate linear;
+    }
+    
+    .loader-pptx::before {
+      content: 'Generando...';
+      line-height: 1em;
+      color: #0000;
+      background: inherit;
+      background-image: radial-gradient(circle closest-side, #fff 94%, #000);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    @keyframes btn-slide {
+      100% {
+        background-position: left;
+      }
+    }
+    
+    
   </style>
 {% endblock dashboardContent %}
