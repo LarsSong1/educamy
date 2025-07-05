@@ -13,7 +13,7 @@ import google.generativeai as genai
 from bs4 import BeautifulSoup
 from datetime import timedelta
 from django.contrib.auth.decorators import login_required
-from .models import GeneratedContent, SchoolSubject, MicroPlan, AnualPlan, Quiz, Profile
+from .models import GeneratedContent, SchoolSubject, MicroPlan, AnualPlan, Quiz, Profile, PptxFile
 from .forms import itinerarieForm, AddSchoolSubjectForm, UpdateProfile
 from django.shortcuts import get_object_or_404
 from math import ceil
@@ -30,6 +30,11 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.contrib.auth.decorators import login_required
 from educamy.services.slidespeak import headers
+from django.core.files.temp import NamedTemporaryFile
+import requests
+import datetime
+from django.core.files.base import ContentFile
+import time
 
 
 
@@ -776,15 +781,179 @@ class MicroItinerarieDetailView(View):
 
     def post(self, request, pk):
         if 'slide_content' in request.POST:
-
+            # Generar presentación con SlideSpeak
             content = request.POST.get('slide_content')
             unit_number = request.POST.get('unit_number')
             microplan_id = request.POST.get('microplan_id')
-            print("funcionando")
-            generarDiapositiva(content, unit_number, microplan_id, request.user, pk, 'detail_micro_plan')
+
+            # VALIDACIÓN: Verificar que el microplan existe
+            try:
+                microplan = MicroPlan.objects.get(pk=microplan_id)
+            except MicroPlan.DoesNotExist:
+                messages.error(request, 'El microplan especificado no existe.')
+                return redirect('educamy:detail_micro_plan', pk=pk)
+
+            # Validar datos requeridos
+            if not content:
+                messages.error(request, 'El contenido de la presentación es requerido.')
+                return redirect('educamy:detail_micro_plan', pk=pk)
+
+           
+           
+
+            # Configuración de la API
+            url = "https://api.slidespeak.co/api/v1/presentation/generate"
+            
+            payload = {
+                "plain_text": content,
+                "length": 10,
+                "template": "default",
+                "language": "ORIGINAL",
+                "fetch_images": True,
+                "tone": "default",
+                "verbosity": "standard",
+                "custom_user_instructions": "Ensure to cover the key events",
+                "include_cover": True,
+                "include_table_of_contents": True,
+                "use_branding_logo": False,
+                "use_branding_color": False
+            }
+
+            try:
+                # Paso 1: Solicitar la creación de la presentación
+                response = requests.post(url, headers=headers, json=payload, timeout=30)
+                response.raise_for_status()
+
+                # Obtener el task_id de la respuesta
+                presentation_data = response.json()
+                task_id = presentation_data.get('task_id')
+
+                if not task_id:
+                    messages.error(request, "Error: No se pudo obtener el task_id de la presentación.")
+                    return redirect('educamy:detail_micro_plan', pk=pk)
+
+                # Paso 2: Esperar a que la presentación esté lista (polling)
+                status_url = f"https://api.slidespeak.co/api/v1/task_status/{task_id}"
+                max_attempts = 20
+                delay = 15  # segundos
+                presentation_url = None
+
+                for attempt in range(max_attempts):
+                    try:
+                        status_response = requests.get(status_url, headers=headers, timeout=30)
+                        status_response.raise_for_status()
+                        
+                        status_data = status_response.json()
+                        task_status = status_data.get('task_status')
+                        
+                        if task_status == 'SUCCESS':
+                            task_result = status_data.get('task_result')
+                            if task_result and 'url' in task_result:
+                                presentation_url = task_result['url']
+                                break
+                            else:
+                                messages.error(request, "Error: La URL de la presentación no está disponible.")
+                                return redirect('educamy:detail_micro_plan', pk=pk)
+                                
+                        elif task_status == 'FAILURE':
+                            messages.error(request, "Error: Falló la generación de la presentación.")
+                            return redirect('educamy:detail_micro_plan', pk=pk)
+                            
+                        elif task_status in ['PENDING', 'RETRY']:
+                            # La tarea aún está en proceso, esperar
+                            if attempt < max_attempts - 1:
+                                time.sleep(delay)
+                                continue
+                            else:
+                                messages.error(request, "Error: Tiempo de espera agotado para la generación.")
+                                return redirect('educamy:detail_micro_plan', pk=pk)
+                        else:
+                            # Estado desconocido, esperar
+                            if attempt < max_attempts - 1:
+                                time.sleep(delay)
+                                continue
+                            else:
+                                messages.error(request, f"Error: Estado desconocido: {task_status}")
+                                return redirect('educamy:detail_micro_plan', pk=pk)
+                                
+                    except requests.exceptions.RequestException as e:
+                        if attempt < max_attempts - 1:
+                            time.sleep(delay)
+                            continue
+                        else:
+                            messages.error(request, f"Error al consultar el estado de la tarea: {e}")
+                            return redirect('educamy:detail_micro_plan', pk=pk)
+
+                # Paso 3: Guardar el registro con la URL (sin descargar el archivo)
+                if presentation_url:
+                    try:
+                        # Primero, intentar guardar solo con la URL
+                        pptx_record = PptxFile(
+                            micro_plan=microplan,
+                            title=f"Presentación de la Unidad {unit_number}",
+                            date=datetime.date.today(),
+                            description="Presentación generada automáticamente con SlideSpeak",
+                            file_url=presentation_url
+                            # No guardamos el archivo localmente por ahora debido a problemas de conectividad
+                        )
+                        
+                        print(f"Intentando guardar PPTX record con:")
+                        print(f"- micro_plan: {microplan}")
+                        print(f"- title: {pptx_record.title}")
+                        print(f"- file_url: {pptx_record.file_url}")
+                        
+                        pptx_record.save()
+                        
+                        print(f"PPTX record guardado exitosamente con ID: {pptx_record.id}")
+
+                        # Opcional: Intentar descargar el archivo en segundo plano
+                        try:
+                            print("Intentando descargar el archivo...")
+                            file_response = requests.get(presentation_url, timeout=30)
+                            file_response.raise_for_status()
+
+                            # Crear el nombre del archivo
+                            filename = f"presentacion_unidad_{unit_number}_{task_id[:8]}.pptx"
+                            
+                            # Crear el archivo Django usando ContentFile
+                            file_content = ContentFile(file_response.content, name=filename)
+                            
+                            # Actualizar el registro con el archivo descargado
+                            pptx_record.pptxfile = file_content
+                            pptx_record.save()
+                            
+                            print("Archivo descargado y guardado exitosamente")
+                            messages.success(request, '¡Presentación generada, guardada y descargada exitosamente!')
+                            
+                        except requests.exceptions.RequestException as download_error:
+                            print(f"Error al descargar el archivo (pero el registro se guardó): {download_error}")
+                            messages.success(request, '¡Presentación generada y guardada exitosamente! (Archivo disponible mediante URL)')
+                        except Exception as download_error:
+                            print(f"Error inesperado al descargar: {download_error}")
+                            messages.success(request, '¡Presentación generada y guardada exitosamente! (Archivo disponible mediante URL)')
+
+                        return redirect('educamy:detail_micro_plan', pk=pk)
+
+                    except Exception as e:
+                        print(f"Error detallado al guardar PPTX: {e}")
+                        print(f"Tipo de error: {type(e).__name__}")
+                        messages.error(request, f"Error al guardar la presentación: {e}")
+                        return redirect('educamy:detail_micro_plan', pk=pk)
+
+                else:
+                    messages.error(request, "Error: No se pudo obtener la URL de la presentación.")
+                    return redirect('educamy:detail_micro_plan', pk=pk)
+
+            except requests.exceptions.RequestException as e:
+                messages.error(request, f"Error al generar la presentación: {e}")
+                return redirect('educamy:detail_micro_plan', pk=pk)
+            except Exception as e:
+                messages.error(request, f"Error inesperado: {e}")
+                return redirect('educamy:detail_micro_plan', pk=pk)
 
 
-            return redirect('educamy:detail_micro_plan', pk=pk)
+
+            
 
         elif 'content' in request.POST:
 
@@ -1877,58 +2046,58 @@ def deleteMicroQuiz(request, quiz_id):
 
 
 
-def generarDiapositiva(title, unit_number, microplan_id, user, pk, url_plan):
-    url = "https://api.slidespeak.co/api/v1/presentation/generate"
-    print(headers, "headers")
-    payload = {
-        "plain_text": title,
-        "length": 6,  # El número de diapositivas
-        "template": "default",  # Plantilla predeterminada
-        "language": "ORIGINAL",  # Idioma original
-        "fetch_images": True,  # Si se desean imágenes
-        "tone": "default",  # Tono de la presentación
-        "verbosity": "standard",  # Nivel de detalle
-        "custom_user_instructions": "Ensure to cover the key events"
-    }
-    try:
-        # Solicitar la creación de la presentación
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()  # Lanza un error si la solicitud falla
+# def generarDiapositiva(title, unit_number, microplan_id, user, pk, url_plan):
+#     url = "https://api.slidespeak.co/api/v1/presentation/generate"
+#     print(headers, "headers")
+#     payload = {
+#         "plain_text": title,
+#         "length": 6,  # El número de diapositivas
+#         "template": "default",  # Plantilla predeterminada
+#         "language": "ORIGINAL",  # Idioma original
+#         "fetch_images": True,  # Si se desean imágenes
+#         "tone": "default",  # Tono de la presentación
+#         "verbosity": "standard",  # Nivel de detalle
+#         "custom_user_instructions": "Ensure to cover the key events"
+#     }
+#     try:
+#         # Solicitar la creación de la presentación
+#         response = requests.post(url, headers=headers, json=payload)
+#         response.raise_for_status()  # Lanza un error si la solicitud falla
 
-        # Obtener la URL del archivo PPTX generado (esto debe venir de la API)
-        presentation_data = response.json()
-        pptx_url = presentation_data.get('file_url')  # Asumiendo que esta es la URL que devuelve la API
+#         # Obtener la URL del archivo PPTX generado (esto debe venir de la API)
+#         presentation_data = response.json()
+#         pptx_url = presentation_data.get('file_url')  # Asumiendo que esta es la URL que devuelve la API
 
-        if pptx_url:
-            # Hacer una solicitud GET para descargar el archivo
-            file_response = requests.get(pptx_url)
-            file_response.raise_for_status()  # Lanza un error si la descarga falla
+#         if pptx_url:
+#             # Hacer una solicitud GET para descargar el archivo
+#             file_response = requests.get(pptx_url)
+#             file_response.raise_for_status()  # Lanza un error si la descarga falla
 
-            # Guardar el archivo descargado en el sistema de archivos del servidor
-            pptx_file = NamedTemporaryFile(delete=True)
-            pptx_file.write(file_response.content)
-            pptx_file.flush()  # Asegúrate de que el archivo esté completamente escrito
+#             # Guardar el archivo descargado en el sistema de archivos del servidor
+#             pptx_file = NamedTemporaryFile(delete=True)
+#             pptx_file.write(file_response.content)
+#             pptx_file.flush()  # Asegúrate de que el archivo esté completamente escrito
 
-            # Crear un nuevo registro en el modelo PptxFile
-            pptx_record = PptxFile(
-                micro_plan_id=microplan_id,  # Asociamos el microplan
-                title=f"Presentación de la Unidad {unit_number} ",
-                date=datetime.date.today(),
-                description="Presentación generada automáticamente",
-                pptxfile=pptx_file,  # Asignamos el archivo descargado
-                file_url=pptx_url,  # Guardamos la URL del archivo
-                status='generated'
-            )
-            pptx_record.save()
+#             # Crear un nuevo registro en el modelo PptxFile
+#             pptx_record = PptxFile(
+#                 micro_plan_id=microplan_id,  # Asociamos el microplan
+#                 title=f"Presentación de la Unidad {unit_number} ",
+#                 date=datetime.date.today(),
+#                 description="Presentación generada automáticamente",
+#                 pptxfile=pptx_file,  # Asignamos el archivo descargado
+#                 file_url=pptx_url,  # Guardamos la URL del archivo
+#                 status='generated'
+#             )
+#             pptx_record.save()
 
-            # Mensaje de éxito
-            return redirect(f'educamy:{url_plan}', pk)  # Redirige donde desees
+#             # Mensaje de éxito
+#             return redirect(f'educamy:{url_plan}', pk)  # Redirige donde desees
 
-        else:
-            print('Se ha presentado un error')
-            return redirect('educamy:dashboard')  # Redirige en caso de error en la API
+#         else:
+#             print('Se ha presentado un error')
+#             return redirect('educamy:dashboard')  # Redirige en caso de error en la API
 
-    except requests.exceptions.RequestException as e:
-        print("Error al generar la presentación")
-        return redirect('educamy:dashboard')
+#     except requests.exceptions.RequestException as e:
+#         print("Error al generar la presentación")
+#         return redirect('educamy:dashboard')
 

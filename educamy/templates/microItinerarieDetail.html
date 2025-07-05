@@ -84,7 +84,29 @@
             </ul>
         </div>
 
+        <div class="bg-white rounded-xl shadow p-4 w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">Diapositivas Generadas</h2>
+                
+            </div>
 
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2">Unidad</th>
+                            <th class="px-4 py-2">Tema</th>
+                            <th class="px-4 py-2">Estado</th>
+                            <th class="px-4 py-2">Fecha</th>
+                            <th class="px-4 py-2">Acciones</th>
+                        </tr>
+                    </thead>
+                     <tbody id="quiz-table-body">
+                <!-- Quizzes will be inserted here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
         <div class="bg-white rounded-xl shadow p-4 w-full">
             <div class="flex justify-between items-center mb-4">
@@ -182,7 +204,6 @@
                                 <input type="hidden" name="microplan_id" value="{{ microItinerarie.pk }}">
                                 <button class="btn-slide cursor-pointer flex gap-2 items-center" type="submit">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-input-icon lucide-file-input"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
-                            
                                     Generar Diapositiva
                                 </button>
                                 <div class="flex justify-end col-span-2">
