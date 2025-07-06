@@ -35,6 +35,7 @@ import requests
 import datetime
 from django.core.files.base import ContentFile
 import time
+from django.forms.models import model_to_dict
 
 
 
@@ -329,6 +330,7 @@ def generate_questions_html(preguntas_texto):
 class AnnualItinerarieDetailView(View):
     def get(self, request, pk):
         annualItinerarie = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
+        pptxGenerated = PptxFile.objects.filter(anual_plan=annualItinerarie)
 
         all_quizzes = Quiz.objects.filter(anual_plan=annualItinerarie)
         
@@ -367,11 +369,31 @@ class AnnualItinerarieDetailView(View):
             quizzes_organized.append(quizzes_by_unit[unit_num])
 
 
+
+        pptx_files_grouped = [[] for _ in range(total_units)]
+
+        for pptx in pptxGenerated:
+            # Si unit_number empieza en 1, restar 1 para índice de lista
+            if pptx.unit_number and 1 <= pptx.unit_number <= total_units:
+                pptx_dict = {
+                    'id': pptx.id,
+                    'title': pptx.title,
+                    'pptxfile': pptx.pptxfile.url if pptx.pptxfile else '',
+                    'file_url': pptx.file_url,
+                    'date': pptx.date.isoformat() if pptx.date else '',
+                    'unit_number': pptx.unit_number,
+                }
+                pptx_files_grouped[pptx.unit_number - 1].append(pptx_dict)
+
+
+
+
         context = {
              'annualItinerarie': annualItinerarie,
              'duration': duration,
              'counter': counter,
              'quizzes': quizzes_organized,
+             'pptxGenerated': json.dumps(pptx_files_grouped),
             
         }
         
@@ -489,11 +511,12 @@ class AnnualItinerarieDetailView(View):
                         # Primero, intentar guardar solo con la URL
                         pptx_record = PptxFile(
                             anual_plan=annualPlan,
-                            title=f"Presentación de la Unidad {unit_number}",
+                            title=content,
                             date=datetime.date.today(),
                             description="Presentación generada automáticamente con SlideSpeak",
-                            file_url=presentation_url
+                            file_url=presentation_url,
                             # No guardamos el archivo localmente por ahora debido a problemas de conectividad
+                            unit_number=unit_number,
                         )
                         
                         print(f"Intentando guardar PPTX record con:")
@@ -857,6 +880,7 @@ def generar_pdf_quiz(titulo, preguntas_texto, unidad, tema, quiz):
 class MicroItinerarieDetailView(View):
     def get(self, request, pk):
         microItinerarie = get_object_or_404(MicroPlan, pk=pk, generatedContentId__user=request.user)
+        pptxGenerated = PptxFile.objects.filter(micro_plan=microItinerarie)
 
 
         all_quizzes = Quiz.objects.filter(microplan=microItinerarie)
@@ -899,11 +923,29 @@ class MicroItinerarieDetailView(View):
 
         print(quizzes_organized)
         
+
+        pptx_files_grouped = [[] for _ in range(total_units)]
+
+        for pptx in pptxGenerated:
+            # Si unit_number empieza en 1, restar 1 para índice de lista
+            if pptx.unit_number and 1 <= pptx.unit_number <= total_units:
+                pptx_dict = {
+                    'id': pptx.id,
+                    'title': pptx.title,
+                    'pptxfile': pptx.pptxfile.url if pptx.pptxfile else '',
+                    'file_url': pptx.file_url,
+                    'date': pptx.date.isoformat() if pptx.date else '',
+                    'unit_number': pptx.unit_number,
+                }
+                pptx_files_grouped[pptx.unit_number - 1].append(pptx_dict)
+
+        
         context = {
             'microItinerarie': microItinerarie,
             'duration': duration,
             'counter': counter,
-            'quizzes': quizzes_organized
+            'quizzes': quizzes_organized,
+            'pptxGenerated': json.dumps(pptx_files_grouped),
         }
 
         
@@ -1023,11 +1065,12 @@ class MicroItinerarieDetailView(View):
                         # Primero, intentar guardar solo con la URL
                         pptx_record = PptxFile(
                             micro_plan=microplan,
-                            title=f"Presentación de la Unidad {unit_number}",
+                            title=content,
                             date=datetime.date.today(),
                             description="Presentación generada automáticamente con SlideSpeak",
-                            file_url=presentation_url
+                            file_url=presentation_url,
                             # No guardamos el archivo localmente por ahora debido a problemas de conectividad
+                            unit_number=unit_number,
                         )
                         
                         print(f"Intentando guardar PPTX record con:")

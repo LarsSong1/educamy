@@ -120,7 +120,29 @@
         </div>
 
 
+        <div class="bg-white rounded-xl shadow p-4 w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">Diapositivas Generadas</h2>
+                
+            </div>
 
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2">Unidad</th>
+                            <th class="px-4 py-2">Tema</th>
+                         
+                            <th class="px-4 py-2">Fecha</th>
+                            <th class="px-4 py-2">Acciones</th>
+                        </tr>
+                    </thead>
+                     <tbody id="pptx-table-body">
+                <!-- Quizzes will be inserted here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
         <div class="bg-white rounded-xl shadow p-4 w-full">
             <div class="flex justify-between items-center mb-4">
@@ -160,6 +182,8 @@
     console.log(evalIndicator)
     const contents = {{ annualItinerarie.unit_contents|safe }};
     const quizzes = {{ quizzes|safe }};
+    const pptx = {{ pptxGenerated|safe }};
+    console.log(pptx, "pptxGenerated");
     console.log(quizzes, "quizzes")
 
     function asignarEventosQuizForm() {
@@ -317,6 +341,35 @@
                     </tr>
                 `;
                 quizzesTableBody.innerHTML += rowHTML;
+            });
+
+
+
+            const pptxPerUnity = pptx[unitNumber - 1];
+            console.log(pptxPerUnity, "pptxPerUnity");
+            const pptxTableBody = document.getElementById('pptx-table-body');
+
+            pptxPerUnity.forEach(item => {
+                const rowHTML = `
+                    <tr class="border-b">
+                        <td class="px-4 py-2 text-center">${item.unit_number}</td>
+                        <td class="px-4 py-2 font-medium text-gray-900">${item.title}</td>
+                    
+                        <td class="px-4 py-2">${item.date}</td>
+                        <td class="px-4 py-2 flex gap-2">
+                            <a href="${item.pptxfile}" target="_blank" title="Ver" class="text-blue-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-icon lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                            </a>
+                            <a href="${item.pptxfile}" download="${item.pptxfile}_quiz.pdf" title="Descargar" class="text-green-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-icon lucide-download"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+                            </a>
+                            <a href="/quiz/delete_micro/${item.id}/" title="Eliminar" class="text-red-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            </a>
+                        </td>
+                    </tr>
+                `;
+                pptxTableBody.innerHTML += rowHTML;
             });
 
 

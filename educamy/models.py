@@ -138,7 +138,7 @@ class PptxFile(models.Model):
     
     # Campo para almacenar la URL del archivo generado
     file_url = models.URLField(max_length=1000, null=True, blank=True)
-    
+    unit_number = models.IntegerField(null=True, blank=True)  # Número de unidad al que pertenece el PPTX
     title = models.CharField(max_length=200, blank=True, null=True)
     date = models.DateField(default=datetime.date.today)
     description = models.TextField(blank=True, null=True)
