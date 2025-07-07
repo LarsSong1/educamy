@@ -20,16 +20,36 @@
             {% for subjects in schoolSubjects  %}
             
             <div class="border-1 rounded-md border-purple-100 p-4 lg:w-[380px] w-full space-y-2">
-                <div>
+                <div class="flex justify-between">
                     <h5 class="font-bold text-md">{{subjects.name}}</h5>
-
+                    {% if subjects.file %}
+                        <div class="flex gap-2 items-center">
+                            <a href="{{subjects.file.url}}" target="_blank">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="purple" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-icon lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                            </a>
+                            <a href="{{subjects.file.url}}" download="{{subjects.file.url}}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="green" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-icon lucide-download"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+                            </a>
+                        </div>
+                        {% else %}
+                        <div></div>
+                    {% endif %}
                 </div>
                 <h6 class="opacity-75 text-xs">{{subjects.created_at}}</h6>
                 <p class="text-xs">{{subjects.description}}</p>
 
                 <div class="flex gap-4 mt-2 w-full justify-end">
                     <a class="text-sm rounded-md bg-orange-500 text-white py-1 px-4" href="{% url 'educamy:edit_school_subject' subjects.pk %}">Editar</a>
-                    <form method="post" action="{% url 'educamy:delete_school_subject' subjects.pk %}" style="display:inline;">
+                    
+
+                    {% comment %} <form method="post"  style="display:inline;" enctype="multipart/form-data" action="{% url 'educamy:edit_school_subject' subjects.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="text-sm  bg-orange-500 text-white cursor-pointer py-1 px-3 rounded">Editar</button>
+                    </form> {% endcomment %}
+
+
+
+                    <form method="post" action="{% url 'educamy:delete_school_subject' subjects.pk %}" style="display:inline;" enctype="multipart/form-data">
                         {% csrf_token %}
                         <button type="submit" class="text-sm bg-red-700 text-white cursor-pointer py-1 px-3 rounded">Eliminar</button>
                     </form>
@@ -45,7 +65,7 @@
             <h5 class="opacity-75 text-sm">Añade una nueva materia a tu catálogo académico</h5>
 
             <div class="mt-4">
-                <form method="POST" class="w-full">
+                <form method="POST" class="w-full" enctype="multipart/form-data" >
                     {% csrf_token %}
                     {{ form | crispy}}
                     <div class="w-full flex justify-end mt-4">

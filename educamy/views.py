@@ -35,7 +35,7 @@ import requests
 import datetime
 from django.core.files.base import ContentFile
 import time
-from django.forms.models import model_to_dict
+from django.contrib.auth import get_user_model
 
 
 
@@ -108,10 +108,31 @@ def userProfile(request, pk):
         form = UpdateProfile(instance=request.user)
 
 
+
+    annualItineraries = AnualPlan.objects.filter(generatedContentId__user=request.user).order_by('-created_at')
+    microItineraries = MicroPlan.objects.filter(generatedContentId__user=request.user).order_by('-created_at')
+
+
+
+    pptxAnnualGenerated = PptxFile.objects.filter(anual_plan__generatedContentId__user=request.user).order_by('-created_at')
+    print("pptxGenerated", pptxAnnualGenerated)
+    pptxMicroGenerated = PptxFile.objects.filter(micro_plan__generatedContentId__user=request.user).order_by('-created_at')
+    print("pptxMicroGenerated", pptxMicroGenerated)
+    pptxCount = pptxAnnualGenerated.count()
+    pptxCount += pptxMicroGenerated.count()
+
+
+    itinerariesCount = annualItineraries.count()
+    itinerariesCount += microItineraries.count()
+
+
     context = {
         'user': user,
         'form': form,
-        'user_photo': request.user.profile.photo.url if request.user.profile.photo else None
+        'user_photo': request.user.profile.photo.url if request.user.profile.photo else None,
+        'itinerariesCount': itinerariesCount,
+        'pptxCount': pptxCount,
+        
 
         
     }
@@ -156,15 +177,29 @@ def save_user_profile(sender, instance, **kwargs):
 @method_decorator(login_required, name='dispatch')
 class DashboardView(View):
     def get(self, request, *args, **kwargs):
+        allAnnualItineraries = AnualPlan.objects.all()
+        allMicroItineraries = MicroPlan.objects.all()
+        print(allAnnualItineraries, allMicroItineraries)
 
         if request.user.is_superuser:
 
+           
+
+
+
+            pptxCount = PptxFile.objects.count()
+
+
+            itinerariesCount = allMicroItineraries.count() + allAnnualItineraries.count()
+
             users = User.objects.all()
-            print("users", users)
+            print(itinerariesCount, "itinerarios")
             usersCount = len(users)
             context = {
                 'users': users,
-                'usersCount': usersCount
+                'usersCount': usersCount,
+                'itinerariesCount': itinerariesCount,
+                'pptxCount': pptxCount,
             }
             return render(request, 'adminDashboard.html', context)
         else:
@@ -172,6 +207,17 @@ class DashboardView(View):
             
             annualItineraries = AnualPlan.objects.filter(generatedContentId__user=request.user).order_by('-created_at')
             microItineraries = MicroPlan.objects.filter(generatedContentId__user=request.user).order_by('-created_at')
+
+
+
+            pptxAnnualGenerated = PptxFile.objects.filter(anual_plan__generatedContentId__user=request.user).order_by('-created_at')
+            print("pptxGenerated", pptxAnnualGenerated)
+            pptxMicroGenerated = PptxFile.objects.filter(micro_plan__generatedContentId__user=request.user).order_by('-created_at')
+            print("pptxMicroGenerated", pptxMicroGenerated)
+            pptxCount = pptxAnnualGenerated.count()
+            pptxCount += pptxMicroGenerated.count()
+
+
             itinerariesCount = annualItineraries.count()
             itinerariesCount += microItineraries.count()
             context = {
@@ -179,8 +225,37 @@ class DashboardView(View):
                 'annualItineraries': annualItineraries,
                 'microItineraries': microItineraries,
                 'itinerariesCount': itinerariesCount,
+                'pptxCount': pptxCount,
             }
             return render(request, 'dashboard.html', context)
+        
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return redirect('educamy:dashboard')
+
+        # Obtiene el ID del usuario a eliminar del formulario
+        user_id = request.POST.get('user_id')
+        User = get_user_model()
+
+        try:
+            user_to_delete = User.objects.get(pk=user_id)
+        
+            # if user_to_delete.is_superuser or user_to_delete == request.user:
+            #     print("Intento de eliminar al superusuario principal o a sí mismo.")
+
+            if user_to_delete == request.user:
+                print("Intento de eliminar a sí mismo.")
+            else:
+                user_to_delete.delete()
+                print("Usuario eliminado correctamente.")
+        except User.DoesNotExist:
+            print("Usuario no encontrado.")
+
+        return redirect('educamy:dashboard')
+        
+
+
+
     
 
 @method_decorator(login_required, name='dispatch')
@@ -237,7 +312,7 @@ class SchoolSubjectsView(View):
         return render(request, 'schoolSubject.html', context)
     
     def post(self, request, *args, **kwargs):
-        form = AddSchoolSubjectForm(request.POST)
+        form = AddSchoolSubjectForm(request.POST, request.FILES)
         if form.is_valid():
             school_subject = form.save(commit=False)
             school_subject.user = request.user
@@ -262,7 +337,7 @@ class SchoolSubjectEditView(View):
 
     def post(self, request, pk):
         subject = get_object_or_404(SchoolSubject, pk=pk, user=request.user)
-        form = AddSchoolSubjectForm(request.POST, instance=subject)
+        form = AddSchoolSubjectForm(request.POST, request.FILES, instance=subject)
         if form.is_valid():
             form.save()
             return redirect('educamy:school_subjects')
@@ -272,6 +347,8 @@ class SchoolSubjectEditView(View):
 class SchoolSubjectDeleteView(View):
     def post(self, request, pk):
         subject = get_object_or_404(SchoolSubject, pk=pk, user=request.user)
+        if subject.file:
+            subject.file.delete(save=False)
         subject.delete()
         return redirect('educamy:school_subjects')
 
