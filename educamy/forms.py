@@ -218,5 +218,18 @@ class AddSchoolSubjectForm(forms.ModelForm):
             'file': _('Archivo de la materia'),
         }
 
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Si estamos editando (instance existe), hacer el archivo opcional
+        if self.instance and self.instance.pk:
+            self.fields['file'].required = False
+            # Añadir información sobre el archivo actual si existe
+            if self.instance.file:
+                self.fields['file'].help_text = f'Archivo actual: {self.instance.file.name}'
+
+
+
+                
        
 

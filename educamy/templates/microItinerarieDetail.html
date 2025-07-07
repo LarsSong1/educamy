@@ -196,9 +196,7 @@
                         ${contentSVG}
                         <p class="text-sm w-[75%]">${item}</p>
                         <div style="display:flex; gap:10px; flex-direction: column;">
-                            <a class="px-4 bg-orange-700 text-white rounded-md text-xs flex items-center w-[200px] gap-2" href="">
-                                
-                            </a>
+                            
                             <form id="form-slide" class="px-4 bg-orange-700 text-white rounded-md text-xs flex items-center w-[200px] gap-2"  method="POST">
                                 {% csrf_token %}
                                 <input type="hidden" name="slide_content" value="${item}">
@@ -311,6 +309,8 @@
             console.log(pptxPerUnity, "pptxPerUnity");
             const pptxTableBody = document.getElementById('pptx-table-body');
 
+
+            pptxTableBody.innerHTML = ''
             pptxPerUnity.forEach(item => {
                 const rowHTML = `
                     <tr class="border-b">

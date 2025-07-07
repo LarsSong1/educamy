@@ -36,7 +36,7 @@ import datetime
 from django.core.files.base import ContentFile
 import time
 from django.contrib.auth import get_user_model
-
+from django.db.models import Q
 
 
 
@@ -177,29 +177,29 @@ def save_user_profile(sender, instance, **kwargs):
 @method_decorator(login_required, name='dispatch')
 class DashboardView(View):
     def get(self, request, *args, **kwargs):
-        allAnnualItineraries = AnualPlan.objects.all()
-        allMicroItineraries = MicroPlan.objects.all()
-        print(allAnnualItineraries, allMicroItineraries)
-
         if request.user.is_superuser:
-
-           
-
-
-
-            pptxCount = PptxFile.objects.count()
-
-
-            itinerariesCount = allMicroItineraries.count() + allAnnualItineraries.count()
-
             users = User.objects.all()
-            print(itinerariesCount, "itinerarios")
-            usersCount = len(users)
+            user_stats = []
+            for user in users:
+                annual_count = AnualPlan.objects.filter(generatedContentId__user=user).count()
+                micro_count = MicroPlan.objects.filter(generatedContentId__user=user).count()
+                itineraries_count = annual_count + micro_count
+                pptx_count = PptxFile.objects.filter(
+                    Q(anual_plan__generatedContentId__user=user) |
+                    Q(micro_plan__generatedContentId__user=user)
+                ).count()
+                user_stats.append({
+                    'user': user,
+                    'itineraries_count': itineraries_count,
+                    'pptx_count': pptx_count,
+                })
+
             context = {
                 'users': users,
-                'usersCount': usersCount,
-                'itinerariesCount': itinerariesCount,
-                'pptxCount': pptxCount,
+                'user_stats': user_stats,
+                'usersCount': users.count(),
+                'itinerariesCount': AnualPlan.objects.count() + MicroPlan.objects.count(),
+                'pptxCount': PptxFile.objects.count(),
             }
             return render(request, 'adminDashboard.html', context)
         else:
@@ -339,7 +339,10 @@ class SchoolSubjectEditView(View):
         subject = get_object_or_404(SchoolSubject, pk=pk, user=request.user)
         form = AddSchoolSubjectForm(request.POST, request.FILES, instance=subject)
         if form.is_valid():
-            form.save()
+            updated_subject = form.save(commit=False)
+            # Asegurar que el usuario se mantenga
+            updated_subject.user = request.user
+            updated_subject.save()
             return redirect('educamy:school_subjects')
         return render(request, 'editSchoolSubject.html', {'form': form, 'subject': subject})
 
@@ -417,22 +420,18 @@ class AnnualItinerarieDetailView(View):
         annualItinerarie = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
         pptxGenerated = PptxFile.objects.filter(anual_plan=annualItinerarie)
 
-        all_quizzes = Quiz.objects.filter(anual_plan=annualItinerarie)
-        
+
+        all_quizzes = Quiz.objects.filter(anual_plan=annualItinerarie)        
         # Organizar quizzes por unidad
         quizzes_by_unit = {}
         total_units = len(annualItinerarie.unit_title)
-
-
         duration = (annualItinerarie.end_date - annualItinerarie.start_date).days
         counter = len(annualItinerarie.unit_title)
         print(counter)
         
 
-
         for unit_num in range(1, total_units + 1):
             quizzes_by_unit[unit_num] = []
-
 
         # Agrupar quizzes por número de unidad
         for quiz in all_quizzes:
@@ -452,23 +451,39 @@ class AnnualItinerarieDetailView(View):
         quizzes_organized = []
         for unit_num in range(1, total_units + 1):
             quizzes_organized.append(quizzes_by_unit[unit_num])
+        print(quizzes_organized)
 
 
 
-        pptx_files_grouped = [[] for _ in range(total_units)]
 
+     
+
+        pptx_by_unit = {}
+        
+        # Inicializar diccionario para PPTX
+        for unit_num in range(1, total_units + 1):
+            pptx_by_unit[unit_num] = []
+
+        # Agrupar PPTX por número de unidad
         for pptx in pptxGenerated:
-            # Si unit_number empieza en 1, restar 1 para índice de lista
-            if pptx.unit_number and 1 <= pptx.unit_number <= total_units:
-                pptx_dict = {
+            unit_number = pptx.unit_number
+            if unit_number in pptx_by_unit:
+                pptx_by_unit[unit_number].append({
                     'id': pptx.id,
                     'title': pptx.title,
                     'pptxfile': pptx.pptxfile.url if pptx.pptxfile else '',
                     'file_url': pptx.file_url,
-                    'date': pptx.date.isoformat() if pptx.date else '',
+                    'date': pptx.date.strftime('%Y-%m-%d') if pptx.date else '',
                     'unit_number': pptx.unit_number,
-                }
-                pptx_files_grouped[pptx.unit_number - 1].append(pptx_dict)
+                    'status': getattr(pptx, 'status', 'completed'),
+                })
+
+        # Convertir PPTX a lista ordenada por unidad
+        pptx_organized = []
+        for unit_num in range(1, total_units + 1):
+            pptx_organized.append(pptx_by_unit[unit_num])
+
+        print(pptx_organized)
 
 
 
@@ -478,7 +493,8 @@ class AnnualItinerarieDetailView(View):
              'duration': duration,
              'counter': counter,
              'quizzes': quizzes_organized,
-             'pptxGenerated': json.dumps(pptx_files_grouped),
+           
+             'pptxGenerated': pptx_organized,
             
         }
         
@@ -1009,20 +1025,34 @@ class MicroItinerarieDetailView(View):
         print(quizzes_organized)
         
 
-        pptx_files_grouped = [[] for _ in range(total_units)]
 
+
+        pptx_by_unit = {}
+        
+        # Inicializar diccionario para PPTX
+        for unit_num in range(1, total_units + 1):
+            pptx_by_unit[unit_num] = []
+
+        # Agrupar PPTX por número de unidad
         for pptx in pptxGenerated:
-            # Si unit_number empieza en 1, restar 1 para índice de lista
-            if pptx.unit_number and 1 <= pptx.unit_number <= total_units:
-                pptx_dict = {
+            unit_number = pptx.unit_number
+            if unit_number in pptx_by_unit:
+                pptx_by_unit[unit_number].append({
                     'id': pptx.id,
                     'title': pptx.title,
                     'pptxfile': pptx.pptxfile.url if pptx.pptxfile else '',
                     'file_url': pptx.file_url,
-                    'date': pptx.date.isoformat() if pptx.date else '',
+                    'date': pptx.date.strftime('%Y-%m-%d') if pptx.date else '',
                     'unit_number': pptx.unit_number,
-                }
-                pptx_files_grouped[pptx.unit_number - 1].append(pptx_dict)
+                    'status': getattr(pptx, 'status', 'completed'),
+                })
+
+        # Convertir PPTX a lista ordenada por unidad
+        pptx_organized = []
+        for unit_num in range(1, total_units + 1):
+            pptx_organized.append(pptx_by_unit[unit_num])
+
+        print(pptx_organized)
 
         
         context = {
@@ -1030,7 +1060,7 @@ class MicroItinerarieDetailView(View):
             'duration': duration,
             'counter': counter,
             'quizzes': quizzes_organized,
-            'pptxGenerated': json.dumps(pptx_files_grouped),
+            'pptxGenerated': pptx_organized,
         }
 
         
@@ -1690,8 +1720,13 @@ def splitDatesInUnits(start_date, end_date, units_number):
 def generateContent(request):
     user = request.user
     initial_data = {}
-    if user.last_name:
+    if user.first_name and user.last_name:
+        initial_data['teacher_name'] = f"{user.first_name} {user.last_name}"
+    elif user.first_name:
+        initial_data['teacher_name'] = user.first_name
+    elif user.last_name:
         initial_data['teacher_name'] = user.last_name
+ 
     
     if request.method == 'POST':
         form = itinerarieForm(request.POST)
