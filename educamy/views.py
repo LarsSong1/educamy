@@ -158,6 +158,7 @@ class DashboardView(View):
     def get(self, request, *args, **kwargs):
 
         if request.user.is_superuser:
+
             users = User.objects.all()
             print("users", users)
             usersCount = len(users)
@@ -167,6 +168,8 @@ class DashboardView(View):
             }
             return render(request, 'adminDashboard.html', context)
         else:
+            
+            
             annualItineraries = AnualPlan.objects.filter(generatedContentId__user=request.user).order_by('-created_at')
             microItineraries = MicroPlan.objects.filter(generatedContentId__user=request.user).order_by('-created_at')
             itinerariesCount = annualItineraries.count()
@@ -204,6 +207,9 @@ class ItinerariesView(View):
 class AnnualPlanDeleteView(View):
     def post(self, request, pk):
         annualItineraries = get_object_or_404(AnualPlan, pk=pk, generatedContentId__user=request.user)
+        if annualItineraries.pdf_file:
+            annualItineraries.pdf_file.delete(save=False)
+   
         annualItineraries.delete()
         # messages.success(request, 'Plan anual eliminado correctamente.')
         return redirect('educamy:itineraries')
@@ -212,6 +218,8 @@ class AnnualPlanDeleteView(View):
 class MicroPlanDeleteView(View):
     def post(self, request, pk):
         microItineraries = get_object_or_404(MicroPlan, pk=pk, generatedContentId__user=request.user)
+        if microItineraries.pdf_file:
+            microItineraries.pdf_file.delete(save=False)
         microItineraries.delete()
         # messages.success(request, 'Plan microcurricular eliminado correctamente.')
         return redirect('educamy:itineraries')
@@ -1604,9 +1612,15 @@ def splitDatesInUnits(start_date, end_date, units_number):
 
 def generateContent(request):
     user = request.user
+    initial_data = {}
+    if user.last_name:
+        initial_data['teacher_name'] = user.last_name
+    
     if request.method == 'POST':
         form = itinerarieForm(request.POST)
         if form.is_valid():
+            
+
             start_date = form.cleaned_data['start_date']
             end_date = form.cleaned_data['end_date']
             units_number = form.cleaned_data['units_number']
@@ -1663,7 +1677,7 @@ def generateContent(request):
           
 
     else:
-        form = itinerarieForm()
+        form = itinerarieForm(initial=initial_data)
 
     return render(request, 'generateContent.html', {'form': form})
             
@@ -2207,18 +2221,60 @@ def generar_preguntas_quiz(content):
 
 def deleteAnnualQuiz(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
-    annual_plan_id = quiz.anual_plan_id  
+    annual_plan_id = quiz.anual_plan_id
+
+    if quiz.pdf_file:
+        quiz.pdf_file.delete(save=False)
     quiz.delete()
+    
     return redirect('educamy:detail_annual_plan', pk=annual_plan_id)
 
 
 def deleteMicroQuiz(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
-    microPlan = quiz.microplan_id
+    if quiz.pdf_file:
+        quiz.pdf_file.delete(save=False)
     quiz.delete()
-    return redirect('educamy:detail_annual_plan', pk=microPlan)
+    return redirect('educamy:detail_micro_plan', pk=quiz.microplan_id)
 
 
 
 
+
+
+def deletePptxFileMicro(request, pk):
+    pptx = get_object_or_404(PptxFile, pk=pk)
+    microPlan = pptx.micro_plan_id
+    
+    # (Opcional) Verifica que el usuario tenga permiso, por ejemplo:
+    if pptx.micro_plan.generatedContentId.user != request.user:
+        messages.error(request, "No tienes permiso para eliminar esta diapositiva.")
+        return redirect('educamy:dashboard')
+
+    # Elimina el archivo físico también
+    if pptx.pptxfile:
+        pptx.pptxfile.delete(save=False)
+    pptx.delete()
+    print("Diapositiva eliminada correctamente.")
+    # Redirige a donde prefieras, aquí asumo vuelves al detalle
+    return redirect('educamy:detail_micro_plan', pk=microPlan)
+
+
+
+def deletePptxFileAnnual(request, pk):
+    pptx = get_object_or_404(PptxFile, pk=pk)
+    anualPlan = pptx.anual_plan_id
+    
+    # (Opcional) Verifica que el usuario tenga permiso, por ejemplo:
+    if pptx.micro_plan.generatedContentId.user != request.user:
+        messages.error(request, "No tienes permiso para eliminar esta diapositiva.")
+        return redirect('educamy:dashboard')
+
+    # Elimina el archivo físico también
+    if pptx.pptxfile:
+        pptx.pptxfile.delete(save=False)
+    pptx.delete()
+    print("Diapositiva eliminada correctamente.")
+    # Redirige a donde prefieras, aquí asumo vuelves al detalle
+    return redirect('educamy:detail_annual_plan', pk=anualPlan)
 

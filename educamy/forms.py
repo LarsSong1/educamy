@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.forms import UserChangeForm
-from .models import SchoolSubject
+from .models import SchoolSubject, Profile
 from django.core.exceptions import ValidationError
 from datetime import date
   # Ya lo tienes arriba, perfecto
@@ -52,7 +52,15 @@ class CreateUser(UserCreationForm):
 
 
 class UpdateProfile(UserChangeForm):
-    photo = forms.ImageField(required=False, label=_('Foto de perfil'))
+   
+    photo = forms.ImageField(required=False, 
+                             label=_('Foto de perfil'),
+                             widget=forms.ClearableFileInput(attrs={
+            'class': 'border-1 rounded-md px-2 cursor-pointer object-contain',  # Ocultamos el input por defecto
+            'accept': 'image/*',
+        })
+                             
+                             )
 
     class Meta:
         model = User
@@ -67,24 +75,15 @@ class UpdateProfile(UserChangeForm):
         }
 
     def save(self, commit=True):
-        user = super().save(commit=False)
-
-        # Crear el perfil si no existe
-        if not hasattr(user, 'profile'):
-            profile = Profile(user=user)
+        user = super().save(commit)
+        # Guardar foto en Profile si existe
+        profile = user.profile
+        if self.cleaned_data.get('photo'):
+            profile.photo = self.cleaned_data.get('photo')
             profile.save()
-        else:
-            profile = user.profile
-
-        # Si la foto ha sido proporcionada, la actualizamos
-        if 'photo' in self.cleaned_data:
-            profile.photo = self.cleaned_data['photo']
-            profile.save()
-
-        if commit:
-            user.save()
-
         return user
+
+
 
 
 

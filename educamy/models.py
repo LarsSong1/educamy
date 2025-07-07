@@ -92,9 +92,6 @@ class MicroPlan(models.Model):
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     photo = models.ImageField(upload_to='user_photos/', blank=True, null=True)  # Carpeta donde se guardan las fotos
-    name = models.CharField(max_length=200, blank=True, null=True)
-    last_name = models.CharField(max_length=200, blank=True, null=True)
-    email = models.EmailField(max_length=200, blank=True, null=True)
 
     def __str__(self):
         return f"Perfil de {self.user.username}"

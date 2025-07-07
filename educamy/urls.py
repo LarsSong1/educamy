@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import loginView, registerView, userProfile, changePassword, DashboardView, generateContent, logoutApp, ItinerariesView, SchoolSubjectsView, SchoolSubjectEditView, SchoolSubjectDeleteView, MicroPlanDeleteView, AnnualPlanDeleteView, AnnualItinerarieDetailView, MicroItinerarieDetailView, deleteAnnualQuiz
+from .views import loginView, registerView, userProfile, changePassword, DashboardView, generateContent, logoutApp, ItinerariesView, SchoolSubjectsView, SchoolSubjectEditView, SchoolSubjectDeleteView, MicroPlanDeleteView, AnnualPlanDeleteView, AnnualItinerarieDetailView, MicroItinerarieDetailView, deleteAnnualQuiz, deleteMicroQuiz, deletePptxFileMicro, deletePptxFileAnnual
 
 app_name = 'educamy'
 
@@ -22,7 +22,9 @@ urlpatterns = [
 
 
     path('quiz/delete_annual/<int:quiz_id>/', deleteAnnualQuiz, name='delete_quiz'),
-    path('quiz/delete_micro/<int:quiz_id>/', deleteAnnualQuiz, name='delete_quiz')
+    path('quiz/delete_micro/<int:quiz_id>/', deleteMicroQuiz, name='delete_quiz'),
+    path('pptx/delete_micro/<int:pk>/', deletePptxFileMicro, name='delete_pptx_micro'),
+    path('pptx/delete_annual/<int:pk>/', deletePptxFileAnnual, name='delete_pptx_annual'),
 
     
 

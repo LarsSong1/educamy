@@ -8,31 +8,29 @@
 
     <div class="mt-4 w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       {% comment %}Cajas Resumen Dashboard{% endcomment %}
-        <div
-        class="border-1 border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
-        <div class="flex justify-between w-full">
-            <h3 class="text-sm font-semibold">Total itinerarios</h3>
-            <svg class="text-purple-900" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-file-spreadsheet-icon lucide-file-spreadsheet">
-                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-                <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-                <path d="M8 13h2" />
-                <path d="M14 13h2" />
-                <path d="M8 17h2" />
-                <path d="M14 17h2" />
-            </svg>
-        </div>
-        <h4 class="font-bold text-2xl">
-            {{ itinerariesCount }}
-            0
-        </h4>
+        <div class="border-1 lg:col-span-1 col-span-full border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
+          <div class="flex justify-between w-full">
+              <h3 class="text-sm font-semibold">Total itinerarios</h3>
+              <svg class="text-purple-900" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  class="lucide lucide-file-spreadsheet-icon lucide-file-spreadsheet">
+                  <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                  <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                  <path d="M8 13h2" />
+                  <path d="M14 13h2" />
+                  <path d="M8 17h2" />
+                  <path d="M14 17h2" />
+              </svg>
+          </div>
+          <h4 class="font-bold text-2xl">
+              {{ itinerariesCount }}
+              0
+          </h4>
 
-        <p class="text-xs opacity-75">Número de itinearios generados</p>
-    </div>
+          <p class="text-xs opacity-75">Número de itinearios generados</p>
+        </div>
     {% comment %} Asignaturas {% endcomment %}
-    <div
-        class="border-1 border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
+    <div class="border-1 lg:col-span-1 col-span-full border-gray-300 rounded-lg p-4 bg-white shadow-md flex flex-col items-start justify-center w-full">
         <div class="flex justify-between w-full">
             <h3 class="text-sm font-semibold">Diapositivas</h3>
             <svg class="text-orange-800" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -53,13 +51,13 @@
     {% comment %}Profile{% endcomment %}
     
 
-    <div class="mt-8">
+    <div class="mt-8 col-span-3">
       <h2 class="font-bold tex-bold text-2xl mb-4">Cuenta</h2>
-      <div class="flex w-full justify-center h-[200px] w-[200px]">
+      <div class="flex w-full items-center rounded justify-center h-[200px]">
         {% if user_photo %}
-          <img class="rounded-full object-cover h-40 w-40" src="{{ user_photo }}" alt="user-profile" />
+          <img class="rounded-full object-contain h-[250px] w-[250px]" src="{{ user_photo }}" alt="user-profile" />
         {% else %}
-          <img class="rounded-md object-contain w-[250px] h-[250px]" width="250" height="250" src="{% static 'img/avatar.jpg' %}" alt="Foto de perfil por defecto" />
+          <img class="rounded-md object-contain w-[200px] h-[200px]" width="250" height="250" src="{% static 'img/avatar.jpg' %}" alt="Foto de perfil por defecto" />
         {% endif %}
       </div>
       <div class="max-w-[800px] flex justify-center items-center mx-auto">
