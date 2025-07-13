@@ -96,7 +96,7 @@
               <h6 class="font-bold">Temas</h6>
               {% for topicsunit in itinerarie.topic  %}
                 <p class="font-bold">Unidad {{forloop.counter}}</p>
-                {% for topic in topicsunit  %}
+                {% for topic in topicsunit|slice:':1'  %}
                 
                   <div class="flex gap-4 w-full py-2 border-t-2 border-gray-300">
                     <p class="text-xs w-[80%] font-medium">{{topic}}</p>

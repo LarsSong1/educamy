@@ -126,7 +126,7 @@
                         </tr>
                     </thead>
                      <tbody id="quiz-table-body">
-                <!-- Quizzes will be inserted here dynamically -->
+                    <!-- Quizzes will be inserted here dynamically -->
                     </tbody>
                 </table>
             </div>
@@ -158,6 +158,23 @@
             form.setAttribute('data-handler', 'true');
             const btnQuiz = form.querySelector('.btn-quiz');
             const loader = form.querySelector('.loader');
+            form.addEventListener('submit', (event) => {
+                if (!form.checkValidity()) {
+                    return;
+                }
+                btnQuiz.classList.add('hidden');
+                loader.classList.remove('hidden');
+                });
+            }
+        });
+    }
+
+    function asignarEventosPptxForm() {
+    document.querySelectorAll('#form-slide').forEach(form => {
+        if (!form.hasAttribute('data-handler')) {
+            form.setAttribute('data-handler', 'true');
+            const btnQuiz = form.querySelector('.btn-slide');
+            const loader = form.querySelector('.loader-pptx');
             form.addEventListener('submit', (event) => {
                 if (!form.checkValidity()) {
                     return;
@@ -235,6 +252,7 @@
             });
 
             asignarEventosQuizForm()
+            asignarEventosPptxForm()
 
 
             // Mostrar los criterios de evaluación correspondientes a la unidad

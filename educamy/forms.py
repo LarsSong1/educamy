@@ -34,6 +34,7 @@ class CreateUser(UserCreationForm):
         if User.objects.filter(username=username).exists():
             raise ValidationError("Este nombre de usuario ya está en uso. Elige otro.")
         return username
+    
 
     class Meta:
         model = User

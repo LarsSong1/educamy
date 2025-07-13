@@ -204,11 +204,11 @@
     }
 
     function asignarEventosPptxForm() {
-    document.querySelectorAll('#form-quiz').forEach(form => {
+    document.querySelectorAll('#form-slide').forEach(form => {
         if (!form.hasAttribute('data-handler')) {
             form.setAttribute('data-handler', 'true');
-            const btnQuiz = form.querySelector('.btn-quiz');
-            const loader = form.querySelector('.loader');
+            const btnQuiz = form.querySelector('.btn-slide');
+            const loader = form.querySelector('.loader-pptx');
             form.addEventListener('submit', (event) => {
                 if (!form.checkValidity()) {
                     return;
@@ -334,6 +334,7 @@
             });
 
             asignarEventosQuizForm()
+            asignarEventosPptxForm()
 
 
 
@@ -462,7 +463,30 @@
 
 
 
-   
+    .loader-pptx {
+      width: fit-content;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 15px;
+      background: radial-gradient(circle closest-side, #000 94%, #0000) right/calc(200% - 1em) 100%;
+      animation: btn-slide 1s infinite alternate linear;
+    }
+    
+    .loader-pptx::before {
+      content: 'Generando...';
+      line-height: 1em;
+      color: #0000;
+      background: inherit;
+      background-image: radial-gradient(circle closest-side, #fff 94%, #000);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    @keyframes btn-slide {
+      100% {
+        background-position: left;
+      }
+    }
 
   </style>
 

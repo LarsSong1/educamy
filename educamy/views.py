@@ -88,6 +88,9 @@ def logoutApp(request):
     logout(request)
     return redirect('educamy:login')
 
+
+
+
 @login_required
 def userProfile(request, pk):
     activate('es')
@@ -172,6 +175,14 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
+
+
+
+
+
+
+
+
 
 
 @method_decorator(login_required, name='dispatch')
@@ -502,6 +513,7 @@ class AnnualItinerarieDetailView(View):
 
 
     def post(self, request, pk):
+        print("aqui")
         if 'slide_content' in request.POST:
             # Generar presentación con SlideSpeak
             content = request.POST.get('slide_content')
@@ -669,7 +681,7 @@ class AnnualItinerarieDetailView(View):
 
             except requests.exceptions.RequestException as e:
                 messages.error(request, f"Error al generar la presentación: {e}")
-                return redirect('educamy:detail_micro_plan', pk=pk)
+                return redirect('educamy:detail_annual_plan', pk=pk)
             except Exception as e:
                 messages.error(request, f"Error inesperado: {e}")
                 return redirect('educamy:detail_annual_plan', pk=pk)
